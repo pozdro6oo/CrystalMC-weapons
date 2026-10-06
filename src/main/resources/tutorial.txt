@@ -1,0 +1,26 @@
+In order to create your own weapon you need to:
+
+1. Create your weapon config in "\weapons\%your-weapon%.json" (if you create just a blank file, plugin will autofill it on server start).
+2. Provide a texture for your weapon in "\weapons\%your-weapon%.png" (plugin will search for a png with the same name as your .json file).
+3. Configure your weapon (in .json file).
+4. Create a sounds files in "assets\sounds" (must match the ones set in your .json, and must have ".ogg" extension), alternatively
+    you can use any default weapons sounds if you don't want to create a new ones.
+5. Start server.
+6. Give your self a weapon by using "/giveweapon @p %your-weapon%" command.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+
+File structure:
+
+📁 CrystalMC-weapons/
+|
+|--- 📁 weapons/
+|   |-- 📄 your_weapon.json
+|   L-- 🖼️ your_weapon.png
+|
+|-- 📁 assets/
+    L-- 📁 sounds/
+        |-- 🔊 shoot.ogg
+        L-- 🔊 reload.ogg

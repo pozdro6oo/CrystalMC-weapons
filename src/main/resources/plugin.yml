@@ -1,0 +1,8 @@
+name: CrystalMC-weapons
+version: '${version}'
+
+main: eu.crystalmc.weapons.CrystalWeapons
+api-version: '26.3'
+load: POSTWORLD
+libraries:
+  - de.exlll:configlib-yaml:4.8.0
