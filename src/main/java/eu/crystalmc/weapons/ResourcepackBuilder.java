@@ -1,15 +1,28 @@
 package eu.crystalmc.weapons;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import eu.crystalmc.weapons.config.Config;
+import eu.crystalmc.weapons.config.JsonConfig;
 import eu.crystalmc.weapons.config.WeaponConfig;
+import eu.crystalmc.weapons.config.resourcepack.Item;
+import eu.crystalmc.weapons.config.resourcepack.Model;
+import eu.crystalmc.weapons.utils.FTPUtils;
+import eu.crystalmc.weapons.utils.HTTPServer;
 import eu.crystalmc.weapons.utils.ZIPUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.codehaus.plexus.util.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Objects;
 
 public class ResourcepackBuilder {
@@ -21,59 +34,350 @@ public class ResourcepackBuilder {
 
 
     public void init() {
-        Config.Data config = plugin.getConfiguration();
-        Path path = plugin.getDataPath();
-
-        File outputFolder = path.resolve("output").toFile();
+        File outputFolder = getResourcepackFolder().toFile();
+        Path crystalFolder = getCrystalmcFolder();
 
 
 
-
-
-        if (!makeDir(outputFolder)) return;
-
-        // clear output folder
         try {
+            FileUtils.forceMkdir(outputFolder);
+
             FileUtils.cleanDirectory(outputFolder);
-        } catch(Exception e) {
-            plugin.sendError("Error when cleaning output folder.");
+
+            Path assets = outputFolder.toPath().resolve("assets");
+
+
+            Files.createDirectories(assets);
+            Files.createDirectories(crystalFolder.resolve("items"));
+            Files.createDirectories(crystalFolder.resolve("sounds"));
+            Files.createDirectories(crystalFolder.resolve("textures").resolve("weapon"));
+            Files.createDirectories(crystalFolder.resolve("models"));
+            Files.createDirectories(crystalFolder.resolve("textures"));
+
+        } catch (IOException e) {
+            plugin.sendError("Error preparing resourcepack folders");
+            return;
         }
 
-        File weaponsFolder = path.resolve("weapons").toFile();
+
+        plugin.saveResource("resourcepack/pack.png", true);
+        plugin.saveResource("resourcepack/pack.mcmeta", true);
+
+        createWeapons();
+
+        createSounds();
+
+        copySubAssets("textures");
+        copySubAssets("models");
+
+        File resourcepackOutput = outputFolder.toPath().getParent().resolve(outputFolder.getName() + ".zip").toFile();
+
+        pack(outputFolder, resourcepackOutput);
+
+        host(resourcepackOutput);
+    }
+
+
+    private void createWeapons() {
+        File weaponsFolder = plugin.getDataPath().resolve("weapons").toFile();
+        int weaponCount = 0;
+
+
+
+        File[] files = weaponsFolder.listFiles((_, name) -> name.endsWith(".json"));
+
+        if (files == null) {
+            plugin.sendWarning("No weapons found.");
+            return;
+        }
 
         File texture;
         String name;
-        WeaponConfig weaponConfig;
+        JsonConfig<WeaponConfig> weaponConfig;
 
-        for (File file : Objects.requireNonNull(weaponsFolder.listFiles())) {
+        for (File file : files) {
             name = file.getName().toLowerCase();
             if (name.endsWith(".json")) {
                 texture = weaponsFolder.toPath().resolve(name.replace(".json", ".png")).toFile();
                 if (texture.exists()) {
+                    weaponConfig = new JsonConfig<>(file, WeaponConfig.class);
+                    name = name.replaceFirst("[.][^.]+$", "");
+                    boolean generated = createWeaponFiles(name, weaponConfig, texture);
+                    if (generated) {
+                        weaponCount++;
+                    } else {
+                        plugin.sendWarning("Failed to register weapon '" + name + "'.");
+                    }
+                }
+            }
+        }
+        plugin.sendInfo("Registered weapons: " + weaponCount);
 
+    }
+
+    private boolean createWeaponFiles(String name, JsonConfig<WeaponConfig> weaponConfig, File texture) {
+        weaponConfig.load();
+        WeaponConfig weapon = weaponConfig.config;
+
+        try {
+            Files.copy(texture.toPath(), getCrystalmcFolder().resolve("textures").resolve("weapon").resolve(texture.getName()), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            plugin.sendError("Failed to create texture.");
+            return false;
+        }
+
+        // check if item is a real material
+        boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(weapon.getItem()));
+        if (!isMaterial) {
+            plugin.sendError("Weapon '" + name + "' has invalid material.");
+            return false;
+        }
+
+        // create item
+        Material material = Material.valueOf(weapon.getItem());
+        ItemStack item = new ItemStack(material);
+
+        weaponConfig.save();
+
+        createWeaponModel(name, weapon);
+        createWeaponItem(name, weapon);
+
+        WeaponsRegistry.registerWeapon(name, item);
+
+        return true;
+    }
+
+    private void createWeaponModel(String name, WeaponConfig weaponConfig) {
+        File modelFile = getCrystalmcFolder().resolve("models").resolve("weapon").resolve(name + ".json").toFile();
+
+        JsonConfig<Model> model = new JsonConfig<>(modelFile, Model.class);
+
+        model.load();
+        model.config.textures.layer0 = "crystalmc:weapon/" + name;
+        model.config.parent = "crystalmc:weapon/" + weaponConfig.getModel();
+
+        model.save();
+    }
+
+    private void createWeaponItem(String name, WeaponConfig weaponConfig) {
+        File modelFireFile = getCrystalmcFolder().resolve("items").resolve("weapon").resolve(name + "_fire.json").toFile();
+
+        JsonConfig<Item> modelFire = new JsonConfig<>(modelFireFile, Item.class);
+
+        modelFire.load();
+        modelFire.config.model.type = "minecraft:composite";
+        modelFire.config.model.model = "";
+        modelFire.config.model.models = List.of(
+                new Item.CustomModel("minecraft:model", "crystalmc:weapon/" + name),
+                new Item.CustomModel("minecraft:model", "crystalmc:weapon_fire/" + weaponConfig.getGunFireAnimationModel())
+        );
+        modelFire.save();
+
+
+        File modelFile = getCrystalmcFolder().resolve("items").resolve("weapon").resolve(name + ".json").toFile();
+
+        JsonConfig<Item> model = new JsonConfig<>(modelFile, Item.class);
+
+        model.load();
+        model.config.model.type = "minecraft:model";
+        model.config.model.model = "";
+        model.config.model.model = "crystalmc:weapon/" + name;
+        model.save();
+
+
+    }
+
+
+
+
+
+
+
+    private void createSounds() {
+        Path folder = plugin.getDataPath().resolve("assets").resolve("sounds");
+
+        Path outputFolder = getCrystalmcFolder().resolve("sounds");
+
+        File[] files = folder.toFile().listFiles((_, name) -> name.endsWith(".ogg"));
+
+        if (files == null) {
+            plugin.sendWarning("No sounds found.");
+            return;
+        }
+
+        Path output;
+        for (File file : files) {
+            try {
+                output = outputFolder.resolve(file.getName()).toAbsolutePath();
+                Files.copy(file.toPath().toAbsolutePath(), output);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        createSoundsFile(files);
+
+    }
+    private void createSoundsFile(File[] sounds) {
+        Path output = getCrystalmcFolder().resolve("sounds.json").toAbsolutePath();
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject json = new JsonObject();
+
+        JsonObject sound;
+        List<String> soundsList;
+
+        String soundName;
+
+        for (File file : sounds) {
+            soundName = file.getName().replaceFirst("[.][^.]+$", "");
+            sound = new JsonObject();
+            soundsList = List.of("crystalmc:" + soundName);
+
+
+
+            sound.add("sounds", gson.toJsonTree(soundsList));
+
+
+            json.add("weapon."+ soundName, sound);
+        }
+
+
+
+        try {
+            Files.writeString(output, json.toString(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            plugin.sendError("Error while writing '" + output + "'.");
+        }
+    }
+
+    private void copySubAssets(String subFolder) {
+        Path crystalFolder = getCrystalmcFolder();
+
+        File textures = plugin.getDataPath().resolve("assets").resolve(subFolder).toFile();
+
+        Path outputFolder = crystalFolder.resolve(subFolder);
+
+        try {
+            Files.createDirectories(outputFolder);
+
+            for (File file : Objects.requireNonNull(textures.listFiles())) {
+                if (file.isDirectory()) {
+                    copyEverything(file.toPath(), outputFolder.resolve(file.getName()));
+                } else {
+                    Path output = outputFolder.resolve(file.getName());
+                    Files.copy(file.toPath(), output, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        } catch (IOException e) {
+            plugin.sendError("Error while copying files. ('" + subFolder + "')");
+        }
+    }
+
+
+
+
+    private void host(File resourcepack) {
+        Config.Data data = plugin.config.data;
+        try {
+            switch (data.resourcepack.mode) {
+                case "upload" -> {
+                    hostUpload(resourcepack, data.resourcepack.modeUpload);
+                }
+                case "provided" -> {
+                    return;
+                }
+                // auto
+                default -> {
+                    hostAuto(resourcepack, data.resourcepack.modeAuto);
+                }
+            }
+        } catch (IOException e) {
+            plugin.sendError("Error while trying to host/upload resourcepack.");
+        }
+    }
+
+    private void hostAuto(File resourcepack, Config.Data.Resourcepack.ModeAuto config) throws IOException {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                HTTPServer server = new HTTPServer();
+                server.setPath(resourcepack.toPath().toAbsolutePath());
+                try {
+                    server.host(config.port);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }.runTaskAsynchronously(plugin);
+
+    }
+
+    private void hostUpload(File resourcepack, Config.Data.Resourcepack.ModeUpload config) throws IOException {
+        FTPUtils.uploadFile(config.host, config.user, config.password, resourcepack.getAbsolutePath(), config.uploadFile);
+    }
+
+
+
+
+
+
+    private void pack(File folder, File output) {
+        try {
+            ZIPUtils.zipFolder(folder, output);
+        } catch (IOException e) {
+            plugin.sendError("Error while packing resourcepack.");
+            return;
+        }
+
+        try {
+            for (String path : plugin.getConfiguration().resourcepack.copyResourcepackOutputTo) {
+                Files.copy(output.toPath(), Path.of(path), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            plugin.sendError("Error while coping resourcepack outputs.");
+        }
+    }
+
+    private Path getResourcepackFolder() {
+        return plugin.getDataPath().resolve("resourcepack");
+    }
+
+    private Path getCrystalmcFolder() {
+        return getResourcepackFolder().resolve("assets").resolve("crystalmc");
+    }
+
+    // return false if file does not exist. returns true if it was created or already exists.
+    private boolean makeDir(Path p) {
+        Path path = p.toAbsolutePath();
+        try {
+//            Files.createDirectories(path);
+            return true;
+        } catch(Exception e) {
+            plugin.sendError("Error while creating '" + path + "'.");
+            return false;
+        }
+    }
+
+    private void copyEverything(Path source, Path target) throws IOException {
+        Files.createDirectories(target);
+
+        try (var files = Files.list(source)) {
+            for (Path file : files.toList()) {
+                Path output = target.resolve(file.getFileName());
+
+                if (Files.isDirectory(file)) {
+                    copyEverything(file, output);
+                } else {
+                    Files.copy(file, output, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
         }
     }
 
-    private void createWeaponFiles(config) {
-
+    private String getFormattedMaterial(String material) {
+        return material.replaceAll(" ", "_").toUpperCase();
     }
 
-    private void pack(File folder, File output) throws IOException {
-        ZIPUtils.zipFolder(folder, output);
-        for (String path : plugin.getConfiguration().resourcepack.copyTo) {
-            Files.copy(output.toPath(), Path.of(path), StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
-
-
-    // return false if file does not exist. returns true if it was created or already exists.
-    private boolean makeDir(File file) {
-        boolean result = true;
-        if (!file.exists()) {
-            result = file.mkdirs();
-        }
-        return result;
-    }
 }

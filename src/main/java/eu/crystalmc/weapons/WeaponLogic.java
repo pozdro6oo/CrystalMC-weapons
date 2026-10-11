@@ -424,6 +424,7 @@ public class WeaponLogic implements Listener {
         if (!isWeapon) return null;
 
         Weapon[] weaponHolder = new Weapon[1];
+
         NBT.get(item, nbt -> {
             var compound = nbt.getCompound("weapon_gun");
             if (compound != null) {

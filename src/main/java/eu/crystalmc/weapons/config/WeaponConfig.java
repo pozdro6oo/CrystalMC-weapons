@@ -4,6 +4,15 @@ import com.google.gson.annotations.SerializedName;
 
 public class WeaponConfig {
 
+    @SerializedName("item")
+    private Item item = new Item();
+
+    @SerializedName("sounds")
+    private Sounds sounds = new Sounds();
+
+    @SerializedName("parent_model")
+    private String model = "default";
+
     @SerializedName("max_bullets")
     private int maxBullets = 12;
 
@@ -28,12 +37,6 @@ public class WeaponConfig {
     @SerializedName("max_distance")
     private int maxDistance = 58;
 
-    @SerializedName("shoot_sound")
-    private String shootSound = "crystalmc:item.WEAPON.shoot";
-
-    @SerializedName("reload_sound")
-    private String reloadSound = "crystalmc:item.WEAPON.reload";
-
     @SerializedName("bullets_per_shot")
     private int bulletsPerShot = 1;
 
@@ -41,7 +44,7 @@ public class WeaponConfig {
     private boolean infiniteAmmo = false;
 
     @SerializedName("gun_fire_animation_model")
-    private String gunFireAnimationModel = "crystalmc:item/weapon_gun_fire";
+    private String gunFireAnimationModel = "weapon_gun_fire";
 
     @SerializedName("bullet_tracer_block")
     private String bulletTracerBlock = "GRAY_STAINED_GLASS";
@@ -66,8 +69,8 @@ public class WeaponConfig {
         this.recoil = recoil;
         this.automatic = automatic;
         this.maxDistance = maxDistance;
-        this.shootSound = shootSound;
-        this.reloadSound = reloadSound;
+        this.sounds.shoot = shootSound;
+        this.sounds.reload = reloadSound;
         this.bulletsPerShot = bulletsPerShot;
         this.infiniteAmmo = infiniteAmmo;
         this.gunFireAnimationModel = gunFireAnimationModel;
@@ -77,6 +80,15 @@ public class WeaponConfig {
 
     public int getMaxBullets() {
         return maxBullets;
+    }
+
+    public String getDisplayName() {
+        return item.displayName;
+    }
+
+
+    public String getItem() {
+        return item.item;
     }
 
 
@@ -115,12 +127,12 @@ public class WeaponConfig {
 
 
     public String getShootSound() {
-        return shootSound;
+        return sounds.shoot;
     }
 
 
     public String getReloadSound() {
-        return reloadSound;
+        return sounds.reload;
     }
 
 
@@ -138,6 +150,10 @@ public class WeaponConfig {
         return gunFireAnimationModel;
     }
 
+    public String getModel() {
+        return model;
+    }
+
 
     public String getBulletTracerBlock() {
         return bulletTracerBlock;
@@ -145,6 +161,28 @@ public class WeaponConfig {
 
     public boolean isSpawnHitMarker() {
         return spawnHitMarker;
+    }
+
+
+
+    public static class Item {
+        Item() {}
+
+        @SerializedName("display_name")
+        private String displayName = "Weapon";
+
+        @SerializedName("item")
+        private String item = "PAPER";
+    }
+
+    public static class Sounds {
+        Sounds() {}
+
+        @SerializedName("shoot")
+        private String shoot = "weapon.shoot";
+
+        @SerializedName("reload")
+        private String reload = "weapon.reload";
     }
 
 }

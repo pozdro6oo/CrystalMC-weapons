@@ -1,25 +1,24 @@
 {
-  "item": "COPPER_NUGGET",
-  "name": "Glock-18",
-  "model": "weapon_gun",
-  "parent": "weapon_gun",
-  "namespaced_key": "crystalmc",
-  "weapon_gun": {
-    "max_bullets": 12,
-    "reload_time": 46,
-    "shot_delay": 5,
-    "damage": 1.8,
-    "inaccuracy": 0.02,
-    "recoil": 0.71,
-    "automatic": false,
-    "max_distance": 38,
-    "shoot_sound": "glock18.shoot",
-    "reload_sound": "glock18.reload",
-    "bullets_per_shot": 1,
-    "infinite_ammo": false,
-    "gun_fire_animation_model": "weapon_gun_fire",
-    "bullet_tracer_block": "GRAY_STAINED_GLASS",
-    "spawn_hit_marker": true
+  "item": {
+    "item": "PAPER",
+    "name": "Glock-18"
   },
-  "max_stack_size": 1
+  "sounds": {
+    "shoot": "glock18.shoot",
+    "reload": "glock18.reload"
+  },
+  "model": "default",
+  "max_bullets": 12,
+  "reload_time": 46,
+  "shot_delay": 5,
+  "damage": 1.8,
+  "inaccuracy": 0.02,
+  "recoil": 0.71,
+  "automatic": false,
+  "max_distance": 38,
+  "bullets_per_shot": 1,
+  "infinite_ammo": false,
+  "gun_fire_animation_model": "default",
+  "bullet_tracer_block": "GRAY_STAINED_GLASS",
+  "spawn_hit_marker": true
 }

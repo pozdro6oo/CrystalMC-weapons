@@ -1,45 +1,62 @@
 package eu.crystalmc.weapons.config;
 
-public interface JsonConfig<T : class> {
-    File file;
-    static class config;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 
-    fun load() {
+public class JsonConfig<T> {
+    private final File file;
+    public T config;
+    private final Class<T> configClass;
+
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+
+    public JsonConfig(File file, Class<T> configClass) {
+        this.file = file;
+        this.configClass = configClass;
+        load();
+    }
+
+   public boolean load() {
         if (!file.exists()) {
-            save()
-            return
-        }
-
-        config = gson.fromJson(
-                file.readText(),
-                config:: class.java
-            )
-    }
-
-    fun save() {
-        file.parentFile ?.mkdirs()
-
-        file.writeText(
-                gson.toJson(config)
-        )
-    }
-
-    fun merge(jsonFile:File) {
-        val thisJson = JSONUtils.getJSON(file)
-        val secondJson = JSONUtils.getJSON(jsonFile)
-        for (entry in secondJson.entrySet()) {
-            if (!thisJson.has(entry.key)) {
-                thisJson.add(entry.key, entry.value)
+            try {
+                config = configClass.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                return false;
             }
+            save();
+            return true;
         }
-        config = gson.fromJson(thisJson, config:: class.java)
+       try {
+           String raw = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+           config = configClass.getDeclaredConstructor().newInstance();
+           config = gson.fromJson(raw, configClass);
+           return true;
+       } catch (Exception e) {
+           return false;
+       }
     }
+
+    public boolean save(File file) {
+        file.getParentFile().mkdirs();
+        try {
+            Files.writeString(file.toPath(), gson.toJson(config), StandardCharsets.UTF_8);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean save() {
+        return save(this.file);
+    }
+
+
 }
-
-
-class SimpleJsonConfig<T: Json>(override val file: File, override var config: T) : JsonConfig<T>
-
-private val gson = GsonBuilder()
-        .setPrettyPrinting()
-        .create()

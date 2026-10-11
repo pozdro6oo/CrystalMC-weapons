@@ -21,9 +21,7 @@ public final class CrystalWeapons extends JavaPlugin {
     public void onEnable() {
 
         // save default resources on first start of the plugin
-        if (this.isSetup()) {
-            setupDefaultConfiguration();
-        }
+        setupDefaultConfiguration();
 
         // load or create config.yml
         config = new Config(this.configPath);
@@ -47,12 +45,20 @@ public final class CrystalWeapons extends JavaPlugin {
         log(message, NamedTextColor.RED);
     }
 
-    public void sendError(String message, Exception exception) {
-        log(message + " Exception: " + exception.getClass().getName(), NamedTextColor.RED);
+    public void sendInfo(String message) {
+        log(message, NamedTextColor.WHITE);
     }
 
     private void log(String message, NamedTextColor color) {
-        Bukkit.getConsoleSender().sendMessage(Component.text(message).color(color));
+        Bukkit.getConsoleSender().sendMessage(getLogPrefix().append(Component.text(message).color(color)));
+    }
+
+    private Component getLogPrefix() {
+        return
+                Component.text("[").color(NamedTextColor.DARK_GRAY)
+                .append(Component.text("Crystal").color(NamedTextColor.LIGHT_PURPLE))
+                .append(Component.text("Weapons").color(NamedTextColor.DARK_PURPLE))
+                .append(Component.text("] ").color(NamedTextColor.DARK_GRAY));
     }
 
     public @NotNull Config.Data getConfiguration() {
@@ -72,28 +78,39 @@ public final class CrystalWeapons extends JavaPlugin {
     }
 
     private void setupDefaultConfiguration() {
-        this.saveResource("assets/textures/bullet_hit.png", false);
-        this.saveResource("assets/textures/fire_textures/weapon_gun_fire.png", false);
-        this.saveResource("assets/textures/fire_textures/taser_fire.png", false);
+        if (this.isSetup()) {
+            this.saveResource("assets/textures/bullet_hit.png", false);
+            this.saveResource("assets/textures/weapon_fire/default.png", false);
+            this.saveResource("assets/textures/weapon_fire/taser.png", false);
 
-        this.saveResource("weapons/ak47.png", false);
-        this.saveResource("weapons/mag7.png", false);
-        this.saveResource("weapons/glock18.png", false);
+            this.saveResource("weapons/ak47.png", false);
+            this.saveResource("weapons/mag7.png", false);
+            this.saveResource("weapons/glock18.png", false);
 
-        this.saveResource("weapons/ak47.json", false);
-        this.saveResource("weapons/mag7.json", false);
-        this.saveResource("weapons/glock18.json", false);
+            this.saveResource("weapons/ak47.json", false);
+            this.saveResource("weapons/mag7.json", false);
+            this.saveResource("weapons/glock18.json", false);
 
-        this.saveResource("assets/sounds/ak47.reload.ogg", false);
-        this.saveResource("assets/sounds/ak47.shoot.ogg", false);
+            this.saveResource("assets/sounds/ak47.reload.ogg", false);
+            this.saveResource("assets/sounds/ak47.shoot.ogg", false);
 
-        this.saveResource("assets/sounds/mag7.reload.ogg", false);
-        this.saveResource("assets/sounds/mag7.shoot.ogg", false);
+            this.saveResource("assets/sounds/mag7.reload.ogg", false);
+            this.saveResource("assets/sounds/mag7.shoot.ogg", false);
 
-        this.saveResource("assets/sounds/glock18.reload.ogg", false);
-        this.saveResource("assets/sounds/glock18.shoot.ogg", false);
+            this.saveResource("assets/sounds/glock18.reload.ogg", false);
+            this.saveResource("assets/sounds/glock18.shoot.ogg", false);
 
-        this.saveResource("tutorial.txt", false);
+            this.saveResource("assets/models/weapon/default.json", false);
+            this.saveResource("assets/models/weapon_fire/default.json", false);
+            this.saveResource("assets/models/weapon_fire/taser.json", false);
+
+            this.saveResource("tutorial.txt", false);
+        }
+
+        String bulletHitModel = "assets/models/bullet_hit.json";
+        if (!this.getDataPath().resolve(bulletHitModel).toFile().exists()) {
+            this.saveResource(bulletHitModel, false);
+        }
     }
 
 }

@@ -51,7 +51,7 @@ public class Config {
                     public String texture = "bullet_hit.png";
 
                     @Comment({
-                            "If you set a limit to maximum amount of decals, the plugin will remove the old ones once the limit is reached.",
+                            "When you set a limit to maximum amount of decals, the plugin will remove the old ones once the limit is reached.",
                             "But if you set it to -1, there won't be a limit. Other than huge lag on client side, this probably won't change much."})
                     public int limit = 500;
 
@@ -69,7 +69,7 @@ public class Config {
                 @Configuration
                 public static class LimitDistanceForAllWeapons {
                     @Comment({
-                            "If enabled: every weapon will use this distance limit (number of blocks)",
+                            "When enabled: every weapon will use this distance limit (number of blocks)",
                             "Please note that there is not hard-coded limit, so if you set this to some high number, the server might crash."
                     })
                     public Boolean enabled = false;
@@ -83,19 +83,19 @@ public class Config {
         public static class Resourcepack {
             @Comment({
                     "Can be set to:",
-                    "- \"auto\"        generate resourcepack and locally host it.",
-                    " \"upload\"      generate resourcepack and upload it to a provided ftp server.",
-                    " \"generate\"    only generate resourcepack.",
-                    "- \"provided\"    do whole nothing."
+                    "- auto         host locally resourcepack.",
+                    "- upload       upload resourcepack to a provided ftp server.",
+                    "- provided     does not host or upload resourcepack but sends pack to user from provided address.",
+                    "- none         does nothing."
             })
             public String mode = "auto";
 
             public ModeAuto modeAuto = new ModeAuto();
             public ModeUpload modeUpload = new ModeUpload();
+            public ModeProvided modeProvided = new ModeProvided();
 
             @Configuration
             public static class ModeAuto {
-                public String host = "0.0.0.0";
                 @Comment("You need to make this port public in-order for other players to download resourcepack.")
                 public int port = 80;
                 @Comment({
@@ -113,8 +113,13 @@ public class Config {
                 public String uploadFile = "/resourcepack.zip";
             }
 
+            @Configuration
+            public static class ModeProvided {
+                public String address = "https://your-website:8080/resourcepack.zip";
+            }
 
-            public Set<String> copyTo = Collections.emptySet();
+
+            public Set<String> copyResourcepackOutputTo = Collections.emptySet();
         }
 
     }

@@ -1,0 +1,47 @@
+{
+	"parent": "buildin/generated",
+	"textures": {
+		"fire": "crystalmc:item/weapon_gun_fire_taser"
+	},
+	"elements": [
+		{
+			"from": [15, 7, 0],
+			"to": [15, 23, 16],
+			"rotation": {"angle": 45, "axis": "z", "origin": [15, 15, 8]},
+			"faces": {
+				"north": {"uv": [2, 0, 2, 16], "texture": "#fire"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#fire"},
+				"south": {"uv": [0, 0, 0, 16], "texture": "#fire"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#fire"},
+				"up": {"uv": [0, 0, 0, 16], "texture": "#fire"},
+				"down": {"uv": [0, 0, 0, 16], "texture": "#fire"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [-104.21, 85.97, 52.48],
+			"translation": [0, 2.75, 0],
+			"scale": [0.9, 0.9, 0.9]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [158.79, -86.11, -154.27],
+			"translation": [0, 3, 0],
+			"scale": [0.9, 0.9, 0.9]
+		},
+		"firstperson_righthand": {
+			"rotation": [-90, 88.5, 41.25],
+			"translation": [0, 2.98, -1.92],
+			"scale": [0.68, 0.68, 0.68]
+		},
+		"firstperson_lefthand": {
+			"rotation": [-99.5, -89.5, -51],
+			"translation": [0, 2.98, -1.92],
+			"scale": [0.68, 0.68, 0.68]
+		},
+		"head": {
+			"rotation": [-72.75, 90, 0],
+			"translation": [0, -2.25, -13.25]
+		}
+	}
+}

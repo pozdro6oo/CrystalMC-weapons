@@ -1,25 +1,24 @@
 {
-  "item": "COPPER_INGOT",
-  "name": "Mag-7",
-  "model": "crystalmc:item/weapon_gun",
-  "parent": "weapon_gun",
-  "namespaced_key": "crystalmc",
-  "weapon_gun": {
-    "max_bullets": 5,
-    "reload_time": 48,
-    "shot_delay": 17,
-    "damage": 1.5,
-    "inaccuracy": 0.15,
-    "recoil": 1.3,
-    "automatic": false,
-    "max_distance": 26,
-    "shoot_sound": "crystalmc:item.mag7.shoot",
-    "reload_sound": "crystalmc:item.mag7.reload",
-    "bullets_per_shot": 9,
-    "infinite_ammo": false,
-    "gun_fire_animation_model": "crystalmc:item/weapon_gun_fire",
-    "bullet_tracer_block": "GRAY_STAINED_GLASS",
-    "spawn_hit_marker": true
+  "item": {
+    "item": "PAPER",
+    "name": "Glock-18"
   },
-  "max_stack_size": 1
+  "sounds": {
+    "shoot": "mag7.shoot",
+    "reload": "mag7.reload"
+  },
+  "model": "default",
+  "max_bullets": 5,
+  "reload_time": 48,
+  "shot_delay": 17,
+  "damage": 1.5,
+  "inaccuracy": 0.15,
+  "recoil": 1.3,
+  "automatic": false,
+  "max_distance": 26,
+  "bullets_per_shot": 9,
+  "infinite_ammo": false,
+  "gun_fire_animation_model": "default",
+  "bullet_tracer_block": "GRAY_STAINED_GLASS",
+  "spawn_hit_marker": true
 }
