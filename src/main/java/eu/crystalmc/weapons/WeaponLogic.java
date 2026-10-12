@@ -6,9 +6,11 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
@@ -48,10 +50,10 @@ public class WeaponLogic implements Listener {
 
 
     public ItemStack createBulletHitTexture() {
-        ItemStack item = new ItemStack(Material.PAPER);
+        ItemStack item = new ItemStack(Material.BLACK_CONCRETE);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setItemModel(NamespacedKey.fromString("crystalmc:misc/bullet_hit"));
+            meta.setItemModel(NamespacedKey.fromString("crystalmc:bullet_hit"));
             item.setItemMeta(meta);
         }
         return item;
@@ -196,16 +198,18 @@ public class WeaponLogic implements Listener {
         String model = weapon.getModelName();
         String modelFire = model + "_fire";
 
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setItemModel(NamespacedKey.fromString(modelFire));
+        if (plugin.getConfiguration().weapon.visual.enableFireAnimation) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setItemModel(NamespacedKey.fromString(modelFire));
 
-            List<Component> lore = meta.lore();
-            if (lore != null && !lore.isEmpty()) {
-                lore.set(0, getBlueText("Ammunition: " + weapon.getBullets() + "/" + weapon.getMaxBullets()));
-                meta.lore(lore);
+                List<Component> lore = meta.lore();
+                if (lore != null && !lore.isEmpty()) {
+                    lore.set(0, getBlueText("Ammunition: " + weapon.getBullets() + "/" + weapon.getMaxBullets()));
+                    meta.lore(lore);
+                }
+                item.setItemMeta(meta);
             }
-            item.setItemMeta(meta);
         }
 
         NBT.modify(item, nbt -> {
@@ -215,17 +219,20 @@ public class WeaponLogic implements Listener {
             }
         });
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (item.equals(player.getActiveItem()) && weapon.getShotDelay() < 4 && weapon.getBullets() > 0) return;
-                ItemMeta currentMeta = item.getItemMeta();
-                if (currentMeta != null) {
-                    currentMeta.setItemModel(NamespacedKey.fromString(model));
-                    item.setItemMeta(currentMeta);
+        if (plugin.getConfiguration().weapon.visual.enableFireAnimation) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (item.equals(player.getActiveItem()) && weapon.getShotDelay() < 4 && weapon.getBullets() > 0)
+                        return;
+                    ItemMeta currentMeta = item.getItemMeta();
+                    if (currentMeta != null) {
+                        currentMeta.setItemModel(NamespacedKey.fromString(model));
+                        item.setItemMeta(currentMeta);
+                    }
                 }
-            }
-        }.runTaskLater(plugin, 3L);
+            }.runTaskLater(plugin, 3L);
+        }
 
         player.setCooldown(item.getType(), weapon.getShotDelay());
 
@@ -242,7 +249,12 @@ public class WeaponLogic implements Listener {
         for (int i = 0; i < weapon.getBulletsPerShot(); i++) {
             HitResult hit = getHitLocation(player, weapon);
 
-            renderTracer(player, hit, weapon);
+            if (plugin.getConfiguration().weapon.visual.enableBulletTracers) {
+                renderTracer(player, hit, weapon);
+            }
+            if (plugin.getConfiguration().weapon.visual.bulletHitDecal.enable) {
+                renderBulletHit(player, hit, weapon);
+            }
 
             if (weapon.getRecoil() > 0) recoil(player, weapon);
 
@@ -274,7 +286,7 @@ public class WeaponLogic implements Listener {
                 && player.getVelocity().getZ() == 0.0
                 && player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR;
 
-        double inaccuracy = !isStandingStill ? 1.2 : weapon.getInaccuracy();
+        double inaccuracy = !isStandingStill ? weapon.getInaccuracy() + plugin.getConfiguration().weapon.gameplay.movementInaccuracy : weapon.getInaccuracy();
 
         Vector vector;
         if (inaccuracy > 0) {
@@ -293,7 +305,9 @@ public class WeaponLogic implements Listener {
         RayTraceResult result = player.getWorld().rayTraceBlocks(
                 player.getEyeLocation(),
                 direction,
-                weapon.getMaxDistance()
+                weapon.getMaxDistance(),
+                FluidCollisionMode.ALWAYS,
+                true
         );
 
         Location location = result != null
@@ -322,7 +336,6 @@ public class WeaponLogic implements Listener {
         start.setY(start.getY() - 0.05);
 
         Location hitLocation = hit.location();
-        BlockFace blockFace = hit.blockFace();
 
         double length = start.distance(hitLocation);
 
@@ -356,6 +369,20 @@ public class WeaponLogic implements Listener {
                 displayTracer.remove();
             }
         }.runTaskLater(plugin, 2L);
+    }
+
+
+
+
+    private void renderBulletHit(Player player, HitResult hit, Weapon weapon) {
+        Vector direction = player.getEyeLocation().clone().getDirection().multiply(0.25);
+
+        Location hitLocation = hit.location();
+        BlockFace blockFace = hit.blockFace();
+        Location start = player.getEyeLocation().add(direction);
+        start.setY(start.getY() - 0.05);
+
+        Block hitBlock = hitLocation.getBlock();
 
         if (!hitLocation.getBlock().getType().isSolid()) {
             Location check = hitLocation.clone();
@@ -364,6 +391,8 @@ public class WeaponLogic implements Listener {
             check.setY(check.getY() - 0.1);
             if (!check.getBlock().getType().isSolid()) {
                 return;
+            } else {
+                hitBlock = check.getBlock();
             }
         }
 
@@ -383,13 +412,11 @@ public class WeaponLogic implements Listener {
                 new AxisAngle4f()
         ));
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                displayHit.remove();
-            }
-        }.runTaskLater(plugin, 400L);
+        BulletHitDecals.start(displayHit, hitBlock, plugin, plugin.getConfiguration());
     }
+
+
+
 
     private static @NonNull AxisAngle4f getAxisAngle4f(BlockFace blockFace) {
         AxisAngle4f rotation;

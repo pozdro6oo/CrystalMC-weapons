@@ -19,4 +19,8 @@ public final class WeaponsRegistry {
     public static void registerWeapon(String id, ItemStack item) {
         WeaponsRegistry.weapons.put(id, item);
     }
+
+    public static ItemStack getWeapon(String id) {
+        return weapons.get(id);
+    }
 }

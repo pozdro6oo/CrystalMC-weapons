@@ -1,10 +1,12 @@
 package eu.crystalmc.weapons;
 
+import eu.crystalmc.weapons.command.WeaponCommand;
 import eu.crystalmc.weapons.config.Config;
+import eu.crystalmc.weapons.resourcepack.ResourcepackBuilder;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-//import eu.crystalmc.weapons.config.WeaponConfig
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +32,15 @@ public final class CrystalWeapons extends JavaPlugin {
         //  register event listener
         //  this one does not need any priority
         Bukkit.getPluginManager().registerEvents(new WeaponLogic(this), this);
+
+        // register command
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(
+                    new WeaponCommand().getCommand(config.data.command.permission)
+            );
+        });
+
+        BulletHitDecals.startGarbageCollector(this);
 
 
         //  build and pack resourcepack

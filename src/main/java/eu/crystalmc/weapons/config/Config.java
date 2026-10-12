@@ -32,23 +32,33 @@ public class Config {
     @Configuration
     public static class Data {
 
+        public Command command= new Command();
+
         public Weapons weapon = new Weapons();
         public Resourcepack resourcepack = new Resourcepack();
+
+
+        @Configuration
+        public static class Command {
+            public String permission = "crystalmc.weapon";
+        }
 
         @Configuration
         public static class Weapons {
             public Visual visual = new Visual();
             public Gameplay gameplay = new Gameplay();
 
+
             @Configuration
             public static class Visual {
                 public Boolean enableBulletTracers = true;
                 public Boolean enableFireAnimation = true;
 
+                public BulletHitDecal bulletHitDecal = new BulletHitDecal();
+
                 @Configuration
-                static class BulletHitDecal {
+                public static class BulletHitDecal {
                     public Boolean enable = true;
-                    public String texture = "bullet_hit.png";
 
                     @Comment({
                             "When you set a limit to maximum amount of decals, the plugin will remove the old ones once the limit is reached.",
@@ -76,6 +86,8 @@ public class Config {
                     public int distance = 128;
                 }
 
+                public Double movementInaccuracy = 0.23;
+
             }
         }
 
@@ -102,7 +114,7 @@ public class Config {
                         "This is your external ip-address, domain or whatever.",
                         "Default: localhost (will only work for you)."
                 })
-                public String ipAddress = "localhost";
+                public String address = "localhost";
             }
 
             @Configuration

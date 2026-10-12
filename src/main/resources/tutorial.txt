@@ -24,3 +24,11 @@ File structure:
     L-- 📁 sounds/
         |-- 🔊 shoot.ogg
         L-- 🔊 reload.ogg
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Advanced:
+    If you want to change assets use '/assets' not '/resourcepack' directory. '/resourcepack' is an auto-generated output

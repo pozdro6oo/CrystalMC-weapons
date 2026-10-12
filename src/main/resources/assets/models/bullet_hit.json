@@ -1,6 +1,6 @@
 {
 	"textures": {
-		"layer0": "crystalmc:item/misc/bullet_hit"
+		"layer0": "crystalmc:item/bullet_hit"
 	},
 	"elements": [
 		{

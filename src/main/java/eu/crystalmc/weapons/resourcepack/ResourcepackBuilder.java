@@ -1,8 +1,13 @@
-package eu.crystalmc.weapons;
+package eu.crystalmc.weapons.resourcepack;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import de.tr7zw.nbtapi.NBT;
+import de.tr7zw.nbtapi.iface.ReadWriteNBT;
+import eu.crystalmc.weapons.CrystalWeapons;
+import eu.crystalmc.weapons.Weapon;
+import eu.crystalmc.weapons.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.config.JsonConfig;
 import eu.crystalmc.weapons.config.WeaponConfig;
@@ -10,25 +15,43 @@ import eu.crystalmc.weapons.config.resourcepack.Item;
 import eu.crystalmc.weapons.config.resourcepack.Model;
 import eu.crystalmc.weapons.utils.FTPUtils;
 import eu.crystalmc.weapons.utils.HTTPServer;
+import eu.crystalmc.weapons.utils.NBTUtils;
 import eu.crystalmc.weapons.utils.ZIPUtils;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Consumable;
+import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.EnumUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.codehaus.plexus.util.FileUtils;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class ResourcepackBuilder {
     CrystalWeapons plugin;
 
-    ResourcepackBuilder(CrystalWeapons plugin) {
+    public ResourcepackBuilder(CrystalWeapons plugin) {
         this.plugin = plugin;
     }
 
@@ -50,7 +73,7 @@ public class ResourcepackBuilder {
             Files.createDirectories(assets);
             Files.createDirectories(crystalFolder.resolve("items"));
             Files.createDirectories(crystalFolder.resolve("sounds"));
-            Files.createDirectories(crystalFolder.resolve("textures").resolve("weapon"));
+            Files.createDirectories(crystalFolder.resolve("textures").resolve("item").resolve("weapon"));
             Files.createDirectories(crystalFolder.resolve("models"));
             Files.createDirectories(crystalFolder.resolve("textures"));
 
@@ -67,8 +90,11 @@ public class ResourcepackBuilder {
 
         createSounds();
 
-        copySubAssets("textures");
-        copySubAssets("models");
+        copySubAssets("textures", "item");
+        copySubAssets("models", null);
+
+        createBulletHitItem();
+
 
         File resourcepackOutput = outputFolder.toPath().getParent().resolve(outputFolder.getName() + ".zip").toFile();
 
@@ -120,22 +146,17 @@ public class ResourcepackBuilder {
         WeaponConfig weapon = weaponConfig.config;
 
         try {
-            Files.copy(texture.toPath(), getCrystalmcFolder().resolve("textures").resolve("weapon").resolve(texture.getName()), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(texture.toPath(), getCrystalmcFolder().resolve("textures").resolve("item").resolve("weapon").resolve(texture.getName()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            plugin.sendError("Failed to create texture.");
+            plugin.sendError("Failed to create a weapon texture.");
             return false;
         }
 
-        // check if item is a real material
-        boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(weapon.getItem()));
-        if (!isMaterial) {
-            plugin.sendError("Weapon '" + name + "' has invalid material.");
+        ItemStack item = createWeaponItemStack(name, weapon);
+
+        if (item == null) {
             return false;
         }
-
-        // create item
-        Material material = Material.valueOf(weapon.getItem());
-        ItemStack item = new ItemStack(material);
 
         weaponConfig.save();
 
@@ -147,13 +168,81 @@ public class ResourcepackBuilder {
         return true;
     }
 
+
+    private ItemStack createWeaponItemStack(String name, WeaponConfig weapon) {
+        // check if item is a real material
+        boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(weapon.getItem()));
+        if (!isMaterial) {
+            plugin.sendError("Weapon '" + name + "' has invalid material.");
+            return null;
+        }
+
+        // create item
+        Material material = Material.valueOf(weapon.getItem());
+
+        ItemStack item = new ItemStack(material);
+
+        Weapon gun = new Weapon(weapon, name);
+
+        ReadWriteNBT compound = NBTUtils.toCompound(gun);
+
+
+        NBT.modify(item, nbt ->
+                {
+                    nbt.getOrCreateCompound("weapon_gun").mergeCompound(compound);
+                    nbt.setBoolean("is_weapon_gun", true);
+                });
+
+        ItemMeta meta = item.getItemMeta();
+
+
+        Component itemName = Component.text(weapon.getDisplayName()).decoration(TextDecoration.ITALIC, false).color(NamedTextColor.WHITE);
+        meta.itemName(itemName);
+        meta.customName(itemName);
+        meta.setItemModel(new NamespacedKey("crystalmc", "weapon/" + name));
+
+        Double fireRate = Math.floor((20.0 / weapon.getShotDelay()) * 1000) / 1000;
+        Double accuracy = 1 - weapon.getInaccuracy();
+
+        meta.lore(List.of(
+            getLoreLine("Ammunition: " + weapon.getMaxBullets() + "/" + weapon.getMaxBullets()),
+            Component.empty(),
+            getLoreLine("Statistics:", NamedTextColor.GRAY),
+            getLoreLine(weapon.getDamage() + " Damage"),
+            getLoreLine(fireRate + " Fire Rate"),
+            getLoreLine(accuracy + " Accuracy"),
+            getLoreLine(weapon.getRecoil() + " Recoil")
+            )
+        );
+
+        Consumable.Builder builder = Consumable.consumable()
+            .hasConsumeParticles(false)
+            .animation(ItemUseAnimation.TOOT_HORN)
+            .consumeSeconds(20);
+
+        meta.setMaxStackSize(1);
+
+        item.setItemMeta(meta);
+
+        item.setData(DataComponentTypes.CONSUMABLE, builder.build());
+
+        return item;
+    }
+
+    private Component getLoreLine(String string, NamedTextColor color) {
+        return Component.text(string).decoration(TextDecoration.ITALIC, false).color(color);
+    }
+    private Component getLoreLine(String string) {
+        return getLoreLine(string, NamedTextColor.BLUE);
+    }
+
     private void createWeaponModel(String name, WeaponConfig weaponConfig) {
         File modelFile = getCrystalmcFolder().resolve("models").resolve("weapon").resolve(name + ".json").toFile();
 
         JsonConfig<Model> model = new JsonConfig<>(modelFile, Model.class);
 
         model.load();
-        model.config.textures.layer0 = "crystalmc:weapon/" + name;
+        model.config.textures.layer0 = "crystalmc:item/weapon/" + name;
         model.config.parent = "crystalmc:weapon/" + weaponConfig.getModel();
 
         model.save();
@@ -185,6 +274,18 @@ public class ResourcepackBuilder {
         model.save();
 
 
+    }
+
+    private void createBulletHitItem() {
+        File modelFile = getCrystalmcFolder().resolve("items").resolve("bullet_hit.json").toFile();
+
+        JsonConfig<Item> model = new JsonConfig<>(modelFile, Item.class);
+
+        model.load();
+        model.config.model.type = "minecraft:model";
+        model.config.model.model = "";
+        model.config.model.model = "crystalmc:bullet_hit";
+        model.save();
     }
 
 
@@ -252,17 +353,22 @@ public class ResourcepackBuilder {
         }
     }
 
-    private void copySubAssets(String subFolder) {
+    private void copySubAssets(String subFolder, String add) {
         Path crystalFolder = getCrystalmcFolder();
 
-        File textures = plugin.getDataPath().resolve("assets").resolve(subFolder).toFile();
+        File folder = plugin.getDataPath().resolve("assets").resolve(subFolder).toFile();
+
 
         Path outputFolder = crystalFolder.resolve(subFolder);
+
+        if (add != null) {
+            outputFolder = outputFolder.resolve(add);
+        }
 
         try {
             Files.createDirectories(outputFolder);
 
-            for (File file : Objects.requireNonNull(textures.listFiles())) {
+            for (File file : Objects.requireNonNull(folder.listFiles())) {
                 if (file.isDirectory()) {
                     copyEverything(file.toPath(), outputFolder.resolve(file.getName()));
                 } else {
@@ -279,7 +385,7 @@ public class ResourcepackBuilder {
 
 
     private void host(File resourcepack) {
-        Config.Data data = plugin.config.data;
+        Config.Data data = plugin.getConfiguration();
         try {
             switch (data.resourcepack.mode) {
                 case "upload" -> {
@@ -291,10 +397,14 @@ public class ResourcepackBuilder {
                 // auto
                 default -> {
                     hostAuto(resourcepack, data.resourcepack.modeAuto);
+                    String address = "http://" + data.resourcepack.modeAuto.address + ":" + data.resourcepack.modeAuto.port + "/" + resourcepack.getName();
+                    addResourcepack(address, resourcepack.toPath());
                 }
             }
         } catch (IOException e) {
             plugin.sendError("Error while trying to host/upload resourcepack.");
+        } catch (URISyntaxException | NoSuchAlgorithmException e) {
+            plugin.sendError("Error while trying add resourcepack.");
         }
     }
 
@@ -380,4 +490,47 @@ public class ResourcepackBuilder {
         return material.replaceAll(" ", "_").toUpperCase();
     }
 
+
+
+
+
+
+
+
+
+    private void addResourcepack(String address, Path path) throws URISyntaxException, NoSuchAlgorithmException, IOException {
+        UUID uuid = UUID.randomUUID();
+
+        ResourcePackInfo packInfo = ResourcePackInfo.resourcePackInfo()
+                .id(uuid)
+                .hash(getSHA1(path))
+                .uri(new URI(address))
+                .build();
+
+
+        ResourcePackRequest packRequest = ResourcePackRequest.resourcePackRequest()
+                .packs(packInfo)
+                .required(true)
+                .prompt(Component.text("Please download resourcepack"))
+                .build();
+
+
+        Bukkit.getPluginManager().registerEvents(new Send(packRequest), plugin);
+    }
+
+
+    public static String getSHA1(Path path) throws NoSuchAlgorithmException, IOException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+
+        try (InputStream input = Files.newInputStream(path)) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+
+            while ((bytesRead = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, bytesRead);
+            }
+        }
+
+        return HexFormat.of().formatHex(digest.digest());
+    }
 }

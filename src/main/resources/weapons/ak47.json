@@ -1,7 +1,7 @@
 {
   "item": {
-    "item": "PAPER",
-    "name": "AK-47"
+    "display_name": "AK-47",
+    "item": "PAPER"
   },
   "sounds": {
     "shoot": "ak47.shoot",
@@ -10,7 +10,7 @@
   "model": "default",
   "max_bullets": 30,
   "reload_time": 48,
-  "shot_delay": 2,
+  "shot_delay": 3,
   "damage": 2.4,
   "inaccuracy": 0.017,
   "recoil": 0.8,

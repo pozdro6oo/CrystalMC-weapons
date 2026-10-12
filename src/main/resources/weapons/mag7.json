@@ -1,7 +1,7 @@
 {
   "item": {
-    "item": "PAPER",
-    "name": "Glock-18"
+    "display_name": "Mag-7",
+    "name": "PAPER"
   },
   "sounds": {
     "shoot": "mag7.shoot",
