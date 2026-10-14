@@ -14,11 +14,11 @@
   "damage": 2.4,
   "inaccuracy": 0.017,
   "recoil": 0.8,
-  "automatic": true,
+  "is_automatic": true,
   "max_distance": 58,
   "bullets_per_shot": 1,
   "infinite_ammo": false,
   "gun_fire_animation_model": "default",
   "bullet_tracer_block": "GRAY_STAINED_GLASS",
-  "spawn_hit_marker": true
+  "spawn_bullet_hit_decal": true
 }

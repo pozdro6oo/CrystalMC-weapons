@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import eu.crystalmc.weapons.CrystalWeapons;
-import eu.crystalmc.weapons.Weapon;
 import eu.crystalmc.weapons.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.config.JsonConfig;
@@ -170,6 +169,7 @@ public class ResourcepackBuilder {
 
 
     private ItemStack createWeaponItemStack(String name, WeaponConfig weapon) {
+
         // check if item is a real material
         boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(weapon.getItem()));
         if (!isMaterial) {
@@ -177,21 +177,20 @@ public class ResourcepackBuilder {
             return null;
         }
 
+
         // create item
         Material material = Material.valueOf(weapon.getItem());
-
         ItemStack item = new ItemStack(material);
 
-        Weapon gun = new Weapon(weapon, name);
 
-        ReadWriteNBT compound = NBTUtils.toCompound(gun);
+        ReadWriteNBT compound = NBTUtils.nbtFromObject(weapon);
+        compound.setString("dedicated_model", "crystalmc:weapon/" + name);
+        compound.setInteger("bullets", weapon.getMaxBullets());
+        compound.setString("id", name);
 
-
-        NBT.modify(item, nbt ->
-                {
-                    nbt.getOrCreateCompound("weapon_gun").mergeCompound(compound);
-                    nbt.setBoolean("is_weapon_gun", true);
-                });
+        NBT.modify(item, nbt -> {
+                nbt.getOrCreateCompound(plugin.COMPOUND).mergeCompound(compound);
+            });
 
         ItemMeta meta = item.getItemMeta();
 
@@ -221,9 +220,7 @@ public class ResourcepackBuilder {
             .consumeSeconds(20);
 
         meta.setMaxStackSize(1);
-
         item.setItemMeta(meta);
-
         item.setData(DataComponentTypes.CONSUMABLE, builder.build());
 
         return item;

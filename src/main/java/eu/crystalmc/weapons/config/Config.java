@@ -32,7 +32,7 @@ public class Config {
     @Configuration
     public static class Data {
 
-        public Command command= new Command();
+        public Command command = new Command();
 
         public Weapons weapon = new Weapons();
         public Resourcepack resourcepack = new Resourcepack();
@@ -65,8 +65,14 @@ public class Config {
                             "But if you set it to -1, there won't be a limit. Other than huge lag on client side, this probably won't change much."})
                     public int limit = 500;
 
-                    @Comment("Time in seconds")
+                    @Comment("Time in seconds.")
                     public int disappearAfter = 45;
+
+                    @Comment( {
+                            "Time in seconds.",
+                            "Plugin removes all unused decals (those which weren't create on current runtime)."
+                    })
+                    public int cleanUnusedDecalsInterval = 240;
 
 
                 }

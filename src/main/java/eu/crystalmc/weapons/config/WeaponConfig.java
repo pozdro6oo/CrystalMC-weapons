@@ -31,8 +31,8 @@ public class WeaponConfig {
     @SerializedName("recoil")
     private float recoil = 0.62F;
 
-    @SerializedName("automatic")
-    private boolean automatic = true;
+    @SerializedName("is_automatic")
+    private boolean isAutomatic = true;
 
     @SerializedName("max_distance")
     private int maxDistance = 58;
@@ -44,38 +44,16 @@ public class WeaponConfig {
     private boolean infiniteAmmo = false;
 
     @SerializedName("gun_fire_animation_model")
-    private String gunFireAnimationModel = "weapon_gun_fire";
+    private String gunFireAnimationModel = "default";
 
     @SerializedName("bullet_tracer_block")
     private String bulletTracerBlock = "GRAY_STAINED_GLASS";
 
-    @SerializedName("spawn_hit_marker")
-    private boolean spawnHitMarker = true;
+    @SerializedName("spawn_bullet_hit_decal")
+    private boolean spawnBulletHitDecal = true;
 
     // for gson to work
     public WeaponConfig() {
-    }
-
-    public WeaponConfig(int maxBullets, int reloadTime, int shotDelay, double damage, double inaccuracy,
-                        float recoil, boolean automatic, int maxDistance, String shootSound,
-                        String reloadSound, int bulletsPerShot, boolean infiniteAmmo,
-                        String gunFireAnimationModel, String bulletTracerBlock, boolean spawnHitMarker) {
-
-        this.maxBullets = maxBullets;
-        this.reloadTime = reloadTime;
-        this.shotDelay = shotDelay;
-        this.damage = damage;
-        this.inaccuracy = inaccuracy;
-        this.recoil = recoil;
-        this.automatic = automatic;
-        this.maxDistance = maxDistance;
-        this.sounds.shoot = shootSound;
-        this.sounds.reload = reloadSound;
-        this.bulletsPerShot = bulletsPerShot;
-        this.infiniteAmmo = infiniteAmmo;
-        this.gunFireAnimationModel = gunFireAnimationModel;
-        this.bulletTracerBlock = bulletTracerBlock;
-        this.spawnHitMarker = spawnHitMarker;
     }
 
     public int getMaxBullets() {
@@ -118,7 +96,7 @@ public class WeaponConfig {
 
 
     public boolean isAutomatic() {
-        return automatic;
+        return isAutomatic;
     }
 
     public int getMaxDistance() {
@@ -159,8 +137,8 @@ public class WeaponConfig {
         return bulletTracerBlock;
     }
 
-    public boolean isSpawnHitMarker() {
-        return spawnHitMarker;
+    public boolean isSpawnBulletHitDecal() {
+        return spawnBulletHitDecal;
     }
 
 

@@ -14,6 +14,8 @@ import java.nio.file.Path;
 
 public final class CrystalWeapons extends JavaPlugin {
 
+    public final String COMPOUND = "crystal_weapon";
+
     @NotNull
     Path configPath = this.getDataPath().resolve("config.yml");
 
@@ -40,13 +42,20 @@ public final class CrystalWeapons extends JavaPlugin {
             );
         });
 
-        BulletHitDecals.startGarbageCollector(this);
+        BulletHitDecals.startGarbageCollector(this, config.data.weapon.visual.bulletHitDecal.cleanUnusedDecalsInterval);
 
 
         //  build and pack resourcepack
         ResourcepackBuilder builder = new ResourcepackBuilder(this);
         builder.init();
     }
+
+    @Override
+    public void onDisable() {
+        BulletHitDecals.removeAll();
+        Bukkit.getScheduler().cancelTasks(this);
+    }
+
 
     public void sendWarning(String message) {
         log(message, NamedTextColor.YELLOW);
