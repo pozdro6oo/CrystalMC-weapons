@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>eu.crystalmc</groupId>
-    <artifactId>crystalmc-weapons</artifactId>
+    <artifactId>crystalweapons</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 

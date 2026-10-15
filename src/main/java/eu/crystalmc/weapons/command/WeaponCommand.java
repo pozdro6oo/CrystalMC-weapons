@@ -72,10 +72,10 @@ public class WeaponCommand {
             }
         }
         if (entities.size() > 1) {
-            sender.sendMessage("Gave weapon to " + entities.size() + " entities");
+            sender.sendMessage("Gave " + weapon + " to " + entities.size() + " entities");
         }
         if (entities.size() == 1) {
-            sender.sendMessage("Gave weapon to " + entities.getFirst().getName());
+            sender.sendMessage("Gave " + weapon + " to " + entities.getFirst().getName());
         }
         if (entities.isEmpty()) {
             sender.sendMessage("&cNo entity was found.");

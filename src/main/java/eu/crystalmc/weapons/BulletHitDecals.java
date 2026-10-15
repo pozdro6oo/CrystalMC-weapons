@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -85,11 +86,9 @@ public final class BulletHitDecals {
     }
 
     public static void removeAll() {
-        ArrayDeque<ItemDisplay> registeredDecals = new ArrayDeque<>(decals);
-        for (ItemDisplay entity : registeredDecals) {
-            entity.remove();
-            decals.remove(entity);
-        }
+        decals.forEach( Entity::remove );
+        decals.clear();
+
         removeOld();
     }
 

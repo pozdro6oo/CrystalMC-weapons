@@ -1,5 +1,6 @@
 package eu.crystalmc.weapons;
 
+import eu.crystalmc.weapons.command.RemoveBulletHitDecalsCommand;
 import eu.crystalmc.weapons.command.WeaponCommand;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.resourcepack.ResourcepackBuilder;
@@ -39,6 +40,9 @@ public final class CrystalWeapons extends JavaPlugin {
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(
                     new WeaponCommand().getCommand(config.data.command.permission)
+            );
+            event.registrar().register(
+                    new RemoveBulletHitDecalsCommand().getCommand(config.data.command.permission)
             );
         });
 

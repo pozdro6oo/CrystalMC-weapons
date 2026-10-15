@@ -10,7 +10,7 @@
   "model": "default",
   "max_bullets": 30,
   "reload_time": 48,
-  "shot_delay": 3,
+  "shot_delay": 2,
   "damage": 2.4,
   "inaccuracy": 0.017,
   "recoil": 0.8,

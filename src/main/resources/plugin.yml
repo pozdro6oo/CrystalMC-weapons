@@ -1,4 +1,4 @@
-name: CrystalMC-weapons
+name: CrystalWeapons
 version: '1.0.0'
 
 main: eu.crystalmc.weapons.CrystalWeapons
