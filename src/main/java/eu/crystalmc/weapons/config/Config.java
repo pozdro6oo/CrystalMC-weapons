@@ -32,21 +32,37 @@ public class Config {
     @Configuration
     public static class Data {
 
-        public Command command = new Command();
+        public Permissions permissions = new Permissions();
 
-        public Weapons weapon = new Weapons();
+        public Weapons weapons = new Weapons();
         public Resourcepack resourcepack = new Resourcepack();
 
 
         @Configuration
-        public static class Command {
-            public String permission = "crystalmc.weapon";
+        public static class Permissions {
+            @Comment({
+                    "Effects reloading and shooting.",
+                    "Set to 'default' to skip permission check."
+            })
+            public String useWeapon = "default";
+
+            @Comment("Effects entire '/weapon' command.")
+            public String command = "crystalweapons.command";
+
+            public String give = "crystalweapons.command.give";
+            public String modify = "crystalweapons.command.modify";
+            public String save = "crystalweapons.command.save";
+            public String removeBulletDecals = "crystalweapons.command.removebulletdecals";
+
+
         }
 
         @Configuration
         public static class Weapons {
             public Visual visual = new Visual();
             public Gameplay gameplay = new Gameplay();
+
+            public Sound sound = new Sound();
 
 
             @Configuration
@@ -70,13 +86,29 @@ public class Config {
 
                     @Comment( {
                             "Time in seconds.",
-                            "Plugin removes all unused decals (those which weren't create on current runtime)."
+                            "Plugin automatically removes all unused decals (those which weren't created on current runtime) in provided interval."
                     })
                     public int cleanUnusedDecalsInterval = 240;
 
-
                 }
+
+                @Comment( {
+                        "When shot_delay of weapon is less than or equal to this value, the plugin will not change the model of the weapon.",
+                        "This fixes the issue where weapon was not visible while shooting."
+                })
+                public int fireAnimationFix = 5;
             }
+
+
+            @Configuration
+            public static class Sound {
+                public Float maxPitch = 1.17F;
+                public Float minPitch = 0.93F;
+                public Float volume = 1.00F;
+            }
+
+
+
 
             @Configuration
             public static class Gameplay {
@@ -85,14 +117,16 @@ public class Config {
                 @Configuration
                 public static class LimitDistanceForAllWeapons {
                     @Comment({
-                            "When enabled: every weapon will use this distance limit (number of blocks)",
-                            "Please note that there is not hard-coded limit, so if you set this to some high number, the server might crash."
+                            "When enabled: every weapon will use this distance limit (number of blocks).",
+                            "Please note that there is not hard-coded limit, so if you set this to some high number, the server might lag or crash."
                     })
                     public Boolean enabled = false;
                     public int distance = 128;
                 }
 
                 public Double movementInaccuracy = 0.23;
+
+                public Double bulletHitboxSize = 0.10;
 
             }
         }

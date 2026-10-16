@@ -10,11 +10,11 @@ public class WeaponConfig {
     @SerializedName("sounds")
     private Sounds sounds = new Sounds();
 
-    @SerializedName("parent_model")
-    private String model = "default";
+    @SerializedName("visual")
+    private Visual visual = new Visual();
 
-    @SerializedName("max_bullets")
-    private int maxBullets = 12;
+    @SerializedName("max_ammunition")
+    private int maxAmmunition = 12;
 
     @SerializedName("reload_time")
     private int reloadTime = 45;
@@ -31,8 +31,8 @@ public class WeaponConfig {
     @SerializedName("recoil")
     private float recoil = 0.62F;
 
-    @SerializedName("is_automatic")
-    private boolean isAutomatic = true;
+    @SerializedName("automatic")
+    private boolean automatic = true;
 
     @SerializedName("max_distance")
     private int maxDistance = 58;
@@ -40,24 +40,15 @@ public class WeaponConfig {
     @SerializedName("bullets_per_shot")
     private int bulletsPerShot = 1;
 
-    @SerializedName("infinite_ammo")
-    private boolean infiniteAmmo = false;
-
-    @SerializedName("gun_fire_animation_model")
-    private String gunFireAnimationModel = "default";
-
-    @SerializedName("bullet_tracer_block")
-    private String bulletTracerBlock = "GRAY_STAINED_GLASS";
-
-    @SerializedName("spawn_bullet_hit_decal")
-    private boolean spawnBulletHitDecal = true;
+    @SerializedName("infinite_ammunition")
+    private boolean infiniteAmmunition = false;
 
     // for gson to work
     public WeaponConfig() {
     }
 
-    public int getMaxBullets() {
-        return maxBullets;
+    public int getMaxAmmunition() {
+        return maxAmmunition;
     }
 
     public String getDisplayName() {
@@ -96,7 +87,7 @@ public class WeaponConfig {
 
 
     public boolean isAutomatic() {
-        return isAutomatic;
+        return automatic;
     }
 
     public int getMaxDistance() {
@@ -119,26 +110,24 @@ public class WeaponConfig {
     }
 
 
-    public boolean isInfiniteAmmo() {
-        return infiniteAmmo;
+    public boolean isInfiniteAmmunition() {
+        return infiniteAmmunition;
     }
 
 
-    public String getGunFireAnimationModel() {
-        return gunFireAnimationModel;
-    }
+    public String getGunFireAnimationModel() {return item.gunFireAnimationModel;}
 
     public String getModel() {
-        return model;
+        return item.model;
     }
 
 
     public String getBulletTracerBlock() {
-        return bulletTracerBlock;
+        return visual.bulletTracerBlock;
     }
 
     public boolean isSpawnBulletHitDecal() {
-        return spawnBulletHitDecal;
+        return visual.spawnBulletHitDecal;
     }
 
 
@@ -151,6 +140,23 @@ public class WeaponConfig {
 
         @SerializedName("item")
         private String item = "PAPER";
+
+        @SerializedName("model")
+        private String model = "default";
+
+        @SerializedName("gun_fire_animation_model")
+        private String gunFireAnimationModel = "default";
+    }
+
+    public static class Visual {
+        Visual() {}
+
+        @SerializedName("bullet_tracer_block")
+        private String bulletTracerBlock = "GRAY_STAINED_GLASS";
+
+        @SerializedName("spawn_bullet_hit_decal")
+        private boolean spawnBulletHitDecal = true;
+
     }
 
     public static class Sounds {

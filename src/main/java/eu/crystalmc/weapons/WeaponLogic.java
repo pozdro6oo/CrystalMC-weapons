@@ -1,6 +1,7 @@
 package eu.crystalmc.weapons;
 
 import de.tr7zw.nbtapi.NBT;
+import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.utils.NBTUtils;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -48,16 +49,6 @@ public class WeaponLogic implements Listener {
     }
 
 
-    public ItemStack createBulletHitTexture() {
-        ItemStack item = new ItemStack(Material.BLACK_CONCRETE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setItemModel(NamespacedKey.fromString("crystalmc:bullet_hit"));
-            item.setItemMeta(meta);
-        }
-        return item;
-    }
-
     // Display bullets when player equips a weapon
     @EventHandler(priority = EventPriority.NORMAL)
     public void onEquip(PlayerItemHeldEvent event) {
@@ -68,7 +59,7 @@ public class WeaponLogic implements Listener {
         Weapon weapon = getWeaponData(item);
         if (weapon == null) return;
 
-        displayBullets(player, weapon.getBullets(), weapon.getMaxBullets());
+        displayBullets(player, weapon.getAmmunition(), weapon.getMaxAmmunition());
     }
 
     // Prevent player from dropping a fired weapon
@@ -84,6 +75,9 @@ public class WeaponLogic implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onRightClick(PlayerInteractEvent event) {
+        String permission = plugin.config.data.permissions.useWeapon;
+        if (!plugin.hasPermission(event.getPlayer(), permission)) return;
+
         ItemStack item = event.getPlayer().getEquipment().getItem(EquipmentSlot.HAND);
 
         Weapon weapon = getWeaponData(item);
@@ -92,18 +86,20 @@ public class WeaponLogic implements Listener {
         useWeapon(event.getPlayer(), item, weapon);
     }
 
-    public void useWeapon(Player player, ItemStack item, Weapon weapon) {
+    private void useWeapon(Player player, ItemStack item, Weapon weapon) {
         new BukkitRunnable() {
             private int timer = 0;
 
             @Override
             public void run() {
                 if (!player.isHandRaised() || !player.isOnline() || !item.equals(player.getActiveItem())) {
+                    updateLore(item, weapon);
                     this.cancel();
                     return;
                 }
 
-                if (weapon.getBullets() == 0) {
+                if (weapon.getAmmunition() == 0) {
+
                     reload(player, weapon, item);
                     this.cancel();
                     return;
@@ -114,10 +110,10 @@ public class WeaponLogic implements Listener {
                 }
 
                 if (timer == 0) {
-                    if (!weapon.isInfiniteAmmo()) {
-                        weapon.setBullets(weapon.getBullets() - 1);
+                    if (!weapon.isInfiniteAmmunition()) {
+                        weapon.setAmmunition(weapon.getAmmunition() - 1);
                     }
-                    displayBullets(player, weapon.getBullets(), weapon.getMaxBullets());
+                    displayBullets(player, weapon.getAmmunition(), weapon.getMaxAmmunition());
                     shoot(player, weapon, item);
 
                     if (!weapon.isAutomatic()) {
@@ -131,21 +127,30 @@ public class WeaponLogic implements Listener {
         }.runTaskTimer(plugin, 0L, 1L);
     }
 
-    public void showHotbar(Player player, String message) {
+    private void showHotbar(Player player, String message) {
         player.sendActionBar(Component.text(message));
     }
 
-    public Sound playSound(Player player, String soundKey, float pitch) {
-        Sound sound = Sound.sound(Key.key(soundKey), Sound.Source.PLAYER, 1.0f, pitch);
+    private Sound playSound(Player player, String soundKey, float pitch) {
+        Sound sound = Sound.sound(Key.key(soundKey), Sound.Source.PLAYER, plugin.getConfiguration().weapons.sound.volume, pitch);
         player.playSound(sound, player.getLocation());
         return sound;
     }
 
-    public Component getBlueText(String string) {
+    private Component getBlueText(String string) {
         return Component.text(string).color(NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false);
     }
 
-    public void reload(Player player, Weapon weapon, ItemStack item) {
+
+    private void updateAmmunition(ItemStack item, Weapon weapon) {
+        NBT.modify(item, nbt -> {
+            var compound = nbt.getCompound(plugin.COMPOUND);
+            if (compound != null) {
+                compound.setInteger("ammunition", weapon.getAmmunition());
+            }
+        });
+    }
+    private void reload(Player player, Weapon weapon, ItemStack item) {
         player.setCooldown(item, weapon.getReloadTime());
 
         Sound sound = playSound(player, "crystalmc:weapon." + weapon.getReloadSound(), 1.0F);
@@ -168,22 +173,10 @@ public class WeaponLogic implements Listener {
 
                 if (timer == weapon.getReloadTime()) {
                     showHotbar(player, "Reloaded");
-                    NBT.modify(item, nbt -> {
-                        var compound = nbt.getCompound(plugin.COMPOUND);
-                        if (compound != null) {
-                            compound.setInteger("bullets", weapon.getMaxBullets());
-                        }
-                    });
+                    weapon.setAmmunition(weapon.getMaxAmmunition());
+                    updateAmmunition(item, weapon);
 
-                    ItemMeta meta = item.getItemMeta();
-                    if (meta != null) {
-                        List<Component> lore = meta.lore();
-                        if (lore != null && !lore.isEmpty()) {
-                            lore.set(0, getBlueText("Ammunition: " + weapon.getMaxBullets() + "/" + weapon.getMaxBullets()));
-                            meta.lore(lore);
-                            item.setItemMeta(meta);
-                        }
-                    }
+                    updateLore(item, weapon);
 
                     this.cancel();
                     return;
@@ -193,51 +186,68 @@ public class WeaponLogic implements Listener {
         }.runTaskTimer(plugin, 0L, 1L);
     }
 
-    public void shoot(Player player, Weapon weapon, ItemStack item) {
+    private void updateLore(ItemStack item, Weapon weapon) {
+        ItemMeta meta = updateLore(item.getItemMeta(), weapon);
+        if (meta == null) return;
+        item.setItemMeta(meta);
+    }
+    private ItemMeta updateLore(ItemMeta meta, Weapon weapon) {
+        if (meta == null) return null;
+        List<Component> lore = meta.lore();
+        if (lore != null && !lore.isEmpty()) {
+            lore.set(0, getBlueText("Ammunition: " + weapon.getAmmunition() + "/" + weapon.getMaxAmmunition()));
+            meta.lore(lore);
+        }
+        return meta;
+    }
+
+    private boolean shouldBeRefreshed(Player player, ItemStack item, Weapon weapon, Config.Data config) {
+        return !(item.equals(player.getActiveItem()) && weapon.getShotDelay() <= config.weapons.visual.fireAnimationFix && weapon.isAutomatic() && weapon.getAmmunition() > 0);
+    }
+
+    private void shoot(Player player, Weapon weapon, ItemStack item) {
+        Config.Data config = plugin.getConfiguration();
+        ItemMeta meta;
+
         String model = weapon.getDedicatedModel();
         String modelFire = model + "_fire";
 
-        if (plugin.getConfiguration().weapon.visual.enableFireAnimation) {
-            ItemMeta meta = item.getItemMeta();
-            if (meta != null) {
-                meta.setItemModel(NamespacedKey.fromString(modelFire));
-
-                List<Component> lore = meta.lore();
-                if (lore != null && !lore.isEmpty()) {
-                    lore.set(0, getBlueText("Ammunition: " + weapon.getBullets() + "/" + weapon.getMaxBullets()));
-                    meta.lore(lore);
-                }
-                item.setItemMeta(meta);
-            }
+        if (shouldBeRefreshed(player, item, weapon, config)) {
+            updateAmmunition(item, weapon);
         }
 
-        NBT.modify(item, nbt -> {
-            var compound = nbt.getCompound(plugin.COMPOUND);
-            if (compound != null) {
-                compound.setInteger("bullets", weapon.getBullets());
-            }
-        });
 
-        if (plugin.getConfiguration().weapon.visual.enableFireAnimation) {
+        // Firing animation.
+        if (config.weapons.visual.enableFireAnimation) {
+            meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setItemModel(NamespacedKey.fromString(modelFire));
+                item.setItemMeta(meta);
+            }
+
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    // Fixes the firing animation when shot delay is shorter than 4 and weapon is autiomatic
-                    if (item.equals(player.getActiveItem()) && weapon.getShotDelay() < 4 && weapon.isAutomatic() && weapon.getBullets() > 0)
+                    // Fixes the firing animation.
+                    if (!shouldBeRefreshed(player, item, weapon, config)) {
                         return;
+                    }
                     ItemMeta currentMeta = item.getItemMeta();
+
                     if (currentMeta != null) {
                         currentMeta.setItemModel(NamespacedKey.fromString(model));
-                        item.setItemMeta(currentMeta);
+
+                        item.setItemMeta(updateLore(currentMeta, weapon));
                     }
                 }
             }.runTaskLater(plugin, 3L);
+        } else {
+            updateLore(item, weapon);
         }
 
         player.setCooldown(item, weapon.getShotDelay());
 
-        float randomPitch = (float) ThreadLocalRandom.current().nextDouble(0.93, 1.17);
-        playSound(player, "crystalmc:weapon." + weapon.getShootSound(), randomPitch);
+        playShootSound(player, weapon, config);
 
         // ----------------------------------------------------------------------------------------------------------
 
@@ -246,12 +256,9 @@ public class WeaponLogic implements Listener {
         for (int i = 0; i < weapon.getBulletsPerShot(); i++) {
             HitResult hit = getHitLocation(player, weapon);
 
-            if (plugin.getConfiguration().weapon.visual.enableBulletTracers) {
-                createBulletTracer(player, hit, weapon);
-            }
-            if (plugin.getConfiguration().weapon.visual.bulletHitDecal.enable) {
-                createBulletHitDecal(player, hit, weapon);
-            }
+            if (config.weapons.visual.enableBulletTracers) createBulletTracer(player, hit, weapon);
+
+            if (config.weapons.visual.bulletHitDecal.enable) createBulletHitDecal(player, hit, weapon);
 
             if (weapon.getRecoil() > 0) recoil(player, weapon);
 
@@ -260,8 +267,8 @@ public class WeaponLogic implements Listener {
             RayTraceResult result = player.getWorld().rayTraceEntities(
                     player.getEyeLocation(),
                     direction,
-                    weapon.getMaxDistance(),
-                    0.15,
+                    getMaxDistance(weapon),
+                    config.weapons.gameplay.bulletHitboxSize,
                     entity -> entity != player && entity instanceof LivingEntity && player.hasLineOfSight(entity)
             );
 
@@ -277,13 +284,27 @@ public class WeaponLogic implements Listener {
         }
     }
 
-    public HitResult getHitLocation(Player player, Weapon weapon) {
+    private void playShootSound(Player player, Weapon weapon, Config.Data config) {
+        float pitch;
+        if (config.weapons.sound.minPitch < config.weapons.sound.maxPitch) {
+            pitch = (float) ThreadLocalRandom.current().nextDouble(config.weapons.sound.minPitch, config.weapons.sound.maxPitch);
+        } else {
+            pitch = 1;
+            plugin.sendError("Value 'min_pitch' cannot be higher than 'max_pitch'. Please change your configuration.");
+        }
+        playSound(player, "crystalmc:weapon." + weapon.getShootSound(), pitch);
+    }
+
+    private HitResult getHitLocation(Player player, Weapon weapon) {
+        int distance = getMaxDistance(weapon);
+
+
         boolean isStandingStill = player.getVelocity().getX() == 0.0
                 && player.getVelocity().getY() <= 0.0
                 && player.getVelocity().getZ() == 0.0
                 && player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR;
 
-        double inaccuracy = !isStandingStill ? weapon.getInaccuracy() + plugin.getConfiguration().weapon.gameplay.movementInaccuracy : weapon.getInaccuracy();
+        double inaccuracy = !isStandingStill ? weapon.getInaccuracy() + plugin.getConfiguration().weapons.gameplay.movementInaccuracy : weapon.getInaccuracy();
 
         Vector vector;
         if (inaccuracy > 0) {
@@ -302,21 +323,21 @@ public class WeaponLogic implements Listener {
         RayTraceResult result = player.getWorld().rayTraceBlocks(
                 player.getEyeLocation(),
                 direction,
-                weapon.getMaxDistance(),
+                distance,
                 FluidCollisionMode.ALWAYS,
                 true
         );
 
         Location location = result != null
                 ? result.getHitPosition().toLocation(start.getWorld())
-                : start.clone().add(direction.multiply(weapon.getMaxDistance()));
+                : start.clone().add(direction.multiply(distance));
 
         BlockFace hitFace = result != null ? result.getHitBlockFace() : null;
 
         return new HitResult(location, hitFace);
     }
 
-    public void recoil(Player player, Weapon weapon) {
+    private void recoil(Player player, Weapon weapon) {
         float startYaw = player.getLocation().getYaw();
         float startPitch = player.getLocation().getPitch();
 
@@ -326,7 +347,7 @@ public class WeaponLogic implements Listener {
         player.setRotation(yaw, pitch);
     }
 
-    public void createBulletTracer(Player player, HitResult hit, Weapon weapon) {
+    private void createBulletTracer(Player player, HitResult hit, Weapon weapon) {
         Vector direction = player.getEyeLocation().clone().getDirection().multiply(0.25);
 
         Location start = player.getEyeLocation().add(direction);
@@ -381,7 +402,7 @@ public class WeaponLogic implements Listener {
 
         Block hitBlock = hitLocation.getBlock();
 
-        // check for negative coordinates (closest block)
+        // check for negative coordinates (closest block).
         if (!hitLocation.getBlock().getType().isSolid()) {
             Location check = hitLocation.clone();
             check.setX(check.getX() - 0.1);
@@ -415,6 +436,15 @@ public class WeaponLogic implements Listener {
 
 
 
+    private int getMaxDistance(Weapon weapon) {
+        Config.Data.Weapons.Gameplay.LimitDistanceForAllWeapons limit = plugin.getConfiguration().weapons.gameplay.limitDistanceForAllWeapons;
+
+        if (limit.enabled) {
+            return limit.distance;
+        } else {
+            return weapon.getMaxDistance();
+        }
+    }
 
     private static @NonNull AxisAngle4f getAxisAngle4f(BlockFace blockFace) {
         AxisAngle4f rotation;
@@ -434,15 +464,15 @@ public class WeaponLogic implements Listener {
         return rotation;
     }
 
-    public void displayBullets(Player player, int bullets, int maxBullets) {
+    private void displayBullets(Player player, int bullets, int maxBullets) {
         showHotbar(player, "Ammunition: " + bullets + "/" + maxBullets);
     }
 
-    public byte getRandomFactor() {
+    private byte getRandomFactor() {
         return ThreadLocalRandom.current().nextBoolean() ? (byte) 1 : (byte) -1;
     }
 
-    public Weapon getWeaponData(ItemStack item) {
+    private Weapon getWeaponData(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return null;
 
         Weapon[] weaponHolder = new Weapon[1];
@@ -456,6 +486,7 @@ public class WeaponLogic implements Listener {
 
         return weaponHolder[0];
     }
+
 
     public record HitResult(Location location, BlockFace blockFace) {}
 }

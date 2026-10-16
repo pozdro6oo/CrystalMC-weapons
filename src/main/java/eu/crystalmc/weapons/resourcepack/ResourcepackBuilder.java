@@ -82,8 +82,8 @@ public class ResourcepackBuilder {
         }
 
 
-        plugin.saveResource("resourcepack/pack.png", true);
-        plugin.saveResource("resourcepack/pack.mcmeta", true);
+        plugin.saveResource("resourcepack_output/pack.png", true);
+        plugin.saveResource("resourcepack_output/pack.mcmeta", true);
 
         createWeapons();
 
@@ -95,7 +95,7 @@ public class ResourcepackBuilder {
         createBulletHitItem();
 
 
-        File resourcepackOutput = outputFolder.toPath().getParent().resolve(outputFolder.getName() + ".zip").toFile();
+        File resourcepackOutput = outputFolder.toPath().getParent().resolve("resourcepack_output" + ".zip").toFile();
 
         pack(outputFolder, resourcepackOutput);
 
@@ -185,7 +185,7 @@ public class ResourcepackBuilder {
 
         ReadWriteNBT compound = NBTUtils.nbtFromObject(weapon);
         compound.setString("dedicated_model", "crystalmc:weapon/" + name);
-        compound.setInteger("bullets", weapon.getMaxBullets());
+        compound.setInteger("ammunition", weapon.getMaxAmmunition());
         compound.setString("id", name);
 
         NBT.modify(item, nbt -> {
@@ -204,7 +204,7 @@ public class ResourcepackBuilder {
         Double accuracy = 1 - weapon.getInaccuracy();
 
         meta.lore(List.of(
-            getLoreLine("Ammunition: " + weapon.getMaxBullets() + "/" + weapon.getMaxBullets()),
+            getLoreLine("Ammunition: " + weapon.getMaxAmmunition() + "/" + weapon.getMaxAmmunition()),
             Component.empty(),
             getLoreLine("Statistics:", NamedTextColor.GRAY),
             getLoreLine(weapon.getDamage() + " Damage"),
@@ -448,24 +448,13 @@ public class ResourcepackBuilder {
     }
 
     private Path getResourcepackFolder() {
-        return plugin.getDataPath().resolve("resourcepack");
+        return plugin.getDataPath().resolve("resourcepack_output");
     }
 
     private Path getCrystalmcFolder() {
         return getResourcepackFolder().resolve("assets").resolve("crystalmc");
     }
 
-    // return false if file does not exist. returns true if it was created or already exists.
-    private boolean makeDir(Path p) {
-        Path path = p.toAbsolutePath();
-        try {
-//            Files.createDirectories(path);
-            return true;
-        } catch(Exception e) {
-            plugin.sendError("Error while creating '" + path + "'.");
-            return false;
-        }
-    }
 
     private void copyEverything(Path source, Path target) throws IOException {
         Files.createDirectories(target);

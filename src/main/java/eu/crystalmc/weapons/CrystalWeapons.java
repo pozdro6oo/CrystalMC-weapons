@@ -8,6 +8,7 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,14 +40,14 @@ public final class CrystalWeapons extends JavaPlugin {
         // register command
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(
-                    new WeaponCommand().getCommand(config.data.command.permission)
+                    new WeaponCommand().getCommand(this)
             );
             event.registrar().register(
-                    new RemoveBulletHitDecalsCommand().getCommand(config.data.command.permission)
+                    new RemoveBulletHitDecalsCommand().getCommand(config.data.permissions.removeBulletDecals)
             );
         });
 
-        BulletHitDecals.startGarbageCollector(this, config.data.weapon.visual.bulletHitDecal.cleanUnusedDecalsInterval);
+        BulletHitDecals.startGarbageCollector(this, config.data.weapons.visual.bulletHitDecal.cleanUnusedDecalsInterval);
 
 
         //  build and pack resourcepack
@@ -60,6 +61,9 @@ public final class CrystalWeapons extends JavaPlugin {
         Bukkit.getScheduler().cancelTasks(this);
     }
 
+    public boolean hasPermission(CommandSender player, String permission) {
+        return (player.hasPermission(permission) || permission.equals("default"));
+    }
 
     public void sendWarning(String message) {
         log(message, NamedTextColor.YELLOW);

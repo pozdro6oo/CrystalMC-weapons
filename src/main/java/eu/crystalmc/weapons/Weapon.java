@@ -5,7 +5,7 @@ import eu.crystalmc.weapons.config.WeaponConfig;
 
 public class Weapon extends WeaponConfig {
 
-    private int bullets;
+    private int ammunition;
 
     private String id;
 
@@ -14,12 +14,12 @@ public class Weapon extends WeaponConfig {
 
 
 
-    public int getBullets() {
-        return bullets;
+    public int getAmmunition() {
+        return ammunition;
     }
 
-    public void setBullets(int bullets) {
-        this.bullets = bullets;
+    public void setAmmunition(int ammunition) {
+        this.ammunition = ammunition;
     }
 
     public String getDedicatedModel() {

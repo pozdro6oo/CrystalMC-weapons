@@ -24,3 +24,4 @@ public class RemoveBulletHitDecalsCommand {
         return command.build();
     }
 }
+

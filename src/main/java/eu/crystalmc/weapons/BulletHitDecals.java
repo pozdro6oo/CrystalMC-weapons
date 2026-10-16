@@ -25,7 +25,7 @@ public final class BulletHitDecals {
     }
 
     public static void start(ItemDisplay displayHit, Block hitBlock, JavaPlugin plugin, Config.Data data) {
-        int limit = data.weapon.visual.bulletHitDecal.limit;
+        int limit = data.weapons.visual.bulletHitDecal.limit;
 
         NBT.modify(displayHit, nbt -> {
             nbt.setBoolean("is_bullet_hit_decal", true);
@@ -47,7 +47,7 @@ public final class BulletHitDecals {
         decals.addLast(displayHit);
 
         final int[] timer = {0};
-        int disappearAfter = data.weapon.visual.bulletHitDecal.disappearAfter*20;
+        int disappearAfter = data.weapons.visual.bulletHitDecal.disappearAfter*20;
 
         new BukkitRunnable() {
             @Override

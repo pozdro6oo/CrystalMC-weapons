@@ -1,5 +1,5 @@
 name: CrystalWeapons
-version: '1.0.0'
+version: '0.1.2'
 
 main: eu.crystalmc.weapons.CrystalWeapons
 api-version: '26.3'

@@ -1,24 +1,26 @@
 {
   "item": {
     "display_name": "Glock-18",
-    "item": "PAPER"
+    "item": "PAPER",
+    "model": "default",
+    "gun_fire_animation_model": "default"
   },
   "sounds": {
     "shoot": "glock18.shoot",
     "reload": "glock18.reload"
   },
-  "model": "default",
-  "max_bullets": 12,
+  "max_ammunition": 12,
   "reload_time": 46,
   "shot_delay": 5,
   "damage": 1.8,
   "inaccuracy": 0.02,
   "recoil": 0.71,
-  "is_automatic": false,
+  "automatic": false,
   "max_distance": 38,
   "bullets_per_shot": 1,
-  "infinite_ammo": false,
-  "gun_fire_animation_model": "default",
-  "bullet_tracer_block": "GRAY_STAINED_GLASS",
-  "spawn_bullet_hit_decal": true
+  "infinite_ammunition": false,
+  "visual": {
+    "bullet_tracer_block": "GRAY_STAINED_GLASS",
+    "spawn_bullet_hit_decal": true
+  }
 }
