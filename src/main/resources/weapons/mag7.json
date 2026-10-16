@@ -14,7 +14,7 @@
   "shot_delay": 17,
   "damage": 1.5,
   "inaccuracy": 0.10,
-  "recoil": 1.3,
+  "recoil": 6,
   "automatic": false,
   "max_distance": 26,
   "bullets_per_shot": 9,

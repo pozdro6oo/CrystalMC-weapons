@@ -23,6 +23,12 @@ public class JsonConfig<T> {
         load();
     }
 
+    public JsonConfig(File file, Class<T> configClass, T config) {
+        this.file = file;
+        this.configClass = configClass;
+        this.config = config;
+    }
+
    public boolean load() {
         if (!file.exists()) {
             try {

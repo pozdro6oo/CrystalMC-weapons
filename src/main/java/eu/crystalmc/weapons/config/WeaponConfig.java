@@ -56,11 +56,6 @@ public class WeaponConfig {
     }
 
 
-    public String getItem() {
-        return item.item;
-    }
-
-
     public int getReloadTime() {
         return reloadTime;
     }
@@ -137,9 +132,6 @@ public class WeaponConfig {
 
         @SerializedName("display_name")
         private String displayName = "Weapon";
-
-        @SerializedName("item")
-        private String item = "PAPER";
 
         @SerializedName("model")
         private String model = "default";

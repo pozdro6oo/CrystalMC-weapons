@@ -65,10 +65,13 @@ public class Config {
             public Sound sound = new Sound();
 
 
+
             @Configuration
             public static class Visual {
                 public Boolean enableBulletTracers = true;
                 public Boolean enableFireAnimation = true;
+
+                public String item = "RABBIT_HIDE";
 
                 public BulletHitDecal bulletHitDecal = new BulletHitDecal();
 
@@ -124,7 +127,11 @@ public class Config {
                     public int distance = 128;
                 }
 
-                public Double movementInaccuracy = 0.23;
+                @Comment({
+                        "This is an experimental feature.",
+                })
+
+                public Double movementInaccuracy = 0.00;
 
                 public Double bulletHitboxSize = 0.10;
 

@@ -1,0 +1,26 @@
+{
+  "item": {
+    "display_name": "Taser",
+    "item": "PAPER",
+    "model": "default",
+    "gun_fire_animation_model": "taser"
+  },
+  "sounds": {
+    "shoot": "taser.shoot",
+    "reload": "taser.reload"
+  },
+  "visual": {
+    "bullet_tracer_block": "LIGHT_BLUE_STAINED_GLASS",
+    "spawn_bullet_hit_decal": false
+  },
+  "max_ammunition": 1,
+  "reload_time": 0,
+  "shot_delay": 42,
+  "damage": 20.0,
+  "inaccuracy": 0.0,
+  "recoil": 0.0,
+  "automatic": false,
+  "max_distance": 1,
+  "bullets_per_shot": 1,
+  "infinite_ammunition": true
+}

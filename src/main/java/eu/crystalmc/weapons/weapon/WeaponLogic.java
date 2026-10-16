@@ -1,6 +1,8 @@
-package eu.crystalmc.weapons;
+package eu.crystalmc.weapons.weapon;
 
 import de.tr7zw.nbtapi.NBT;
+import eu.crystalmc.weapons.BulletHitDecals;
+import eu.crystalmc.weapons.CrystalWeapons;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.utils.NBTUtils;
 import net.kyori.adventure.key.Key;
@@ -75,7 +77,7 @@ public class WeaponLogic implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onRightClick(PlayerInteractEvent event) {
-        String permission = plugin.config.data.permissions.useWeapon;
+        String permission = plugin.getConfiguration().permissions.useWeapon;
         if (!plugin.hasPermission(event.getPlayer(), permission)) return;
 
         ItemStack item = event.getPlayer().getEquipment().getItem(EquipmentSlot.HAND);
@@ -94,6 +96,7 @@ public class WeaponLogic implements Listener {
             public void run() {
                 if (!player.isHandRaised() || !player.isOnline() || !item.equals(player.getActiveItem())) {
                     updateLore(item, weapon);
+                    updateAmmunition(item, weapon);
                     this.cancel();
                     return;
                 }
@@ -144,7 +147,7 @@ public class WeaponLogic implements Listener {
 
     private void updateAmmunition(ItemStack item, Weapon weapon) {
         NBT.modify(item, nbt -> {
-            var compound = nbt.getCompound(plugin.COMPOUND);
+            var compound = nbt.getCompound(CrystalWeapons.COMPOUND);
             if (compound != null) {
                 compound.setInteger("ammunition", weapon.getAmmunition());
             }
@@ -253,14 +256,13 @@ public class WeaponLogic implements Listener {
 
         Map<LivingEntity, Double> damageMap = new HashMap<>();
 
+
         for (int i = 0; i < weapon.getBulletsPerShot(); i++) {
             HitResult hit = getHitLocation(player, weapon);
 
             if (config.weapons.visual.enableBulletTracers) createBulletTracer(player, hit, weapon);
 
-            if (config.weapons.visual.bulletHitDecal.enable) createBulletHitDecal(player, hit, weapon);
-
-            if (weapon.getRecoil() > 0) recoil(player, weapon);
+            if (config.weapons.visual.bulletHitDecal.enable && weapon.isSpawnBulletHitDecal()) createBulletHitDecal(player, hit, weapon);
 
             Vector direction = hit.location().toVector().subtract(player.getEyeLocation().toVector());
 
@@ -277,6 +279,8 @@ public class WeaponLogic implements Listener {
             }
         }
         // ----------------------------------------------------------------------------------------------------------
+
+        if (weapon.getRecoil() > 0) recoil(player, weapon);
 
         for (Map.Entry<LivingEntity, Double> entry : damageMap.entrySet()) {
             entry.getKey().damage(entry.getValue(), player);
@@ -417,7 +421,6 @@ public class WeaponLogic implements Listener {
 
         AxisAngle4f rotation = getAxisAngle4f(blockFace);
 
-        if (!weapon.isSpawnBulletHitDecal()) return;
 
         ItemDisplay displayHit = start.getWorld().spawn(hitLocation, ItemDisplay.class);
 
@@ -472,13 +475,13 @@ public class WeaponLogic implements Listener {
         return ThreadLocalRandom.current().nextBoolean() ? (byte) 1 : (byte) -1;
     }
 
-    private Weapon getWeaponData(ItemStack item) {
+    public static Weapon getWeaponData(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return null;
 
         Weapon[] weaponHolder = new Weapon[1];
 
         NBT.get(item, nbt -> {
-            var compound = nbt.getCompound(plugin.COMPOUND);
+            var compound = nbt.getCompound(CrystalWeapons.COMPOUND);
             if (compound != null) {
                 weaponHolder[0] = NBTUtils.nbtToObject(compound, Weapon.class);
             }

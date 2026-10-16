@@ -1,4 +1,4 @@
-package eu.crystalmc.weapons;
+package eu.crystalmc.weapons.weapon;
 
 import org.bukkit.inventory.ItemStack;
 

@@ -8,8 +8,11 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.tr7zw.nbtapi.NBT;
 import eu.crystalmc.weapons.CrystalWeapons;
-import eu.crystalmc.weapons.WeaponsRegistry;
+import eu.crystalmc.weapons.weapon.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
+import eu.crystalmc.weapons.config.JsonConfig;
+import eu.crystalmc.weapons.config.WeaponConfig;
+import eu.crystalmc.weapons.utils.NBTUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -18,7 +21,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -27,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -55,11 +58,50 @@ public class WeaponCommand {
                                 })
                     ))
             )
-            .then(getModifyArgument(plugin, config));
+            .then(getModifyArgument(plugin, config))
+            .then(Commands.literal("save")
+                    .requires(source -> plugin.hasPermission(source.getSender(), config.permissions.save))
+                    .then(Commands.argument("weapon", StringArgumentType.word())
+                            .suggests( (_, builder) -> suggestWeapons(builder))
+                            .executes(context -> {
+                                CommandSender sender = context.getSource().getSender();
+                                String weapon = context.getArgument("weapon", String.class);
+
+                                File file = plugin.getDataFolder().toPath().resolve("weapons").resolve(weapon + ".json").toFile();
+
+
+                                if (sender instanceof Player) {
+                                    ItemStack item = ((Player) sender).getEquipment().getItem(EquipmentSlot.HAND);
+                                    if (item.getType() == Material.AIR) {
+                                        sender.sendMessage(Component.text("You are not holding an item").color(NamedTextColor.RED));
+                                        return Command.SINGLE_SUCCESS;
+                                    }
+                                    NBT.modify(item, nbt -> {
+                                        var compound = nbt.getCompound(plugin.COMPOUND);
+                                        if (compound != null) {
+                                            WeaponConfig weaponConfig = NBTUtils.nbtToObject(compound, WeaponConfig.class);
+                                            JsonConfig<WeaponConfig>  json = new JsonConfig(file, WeaponConfig.class, weaponConfig);
+                                            sender.sendMessage("Saved weapon '" + weapon + "' (changes will be applied on next server start)");
+                                            json.save();
+                                        } else {
+                                            sender.sendMessage(Component.text("Item is not a weapon").color(NamedTextColor.RED));
+                                        }
+                                    });
+
+                                } else {
+                                    sender.sendMessage(Component.text("A player is required to run this command here").color(NamedTextColor.RED));
+                                }
+
+                                return Command.SINGLE_SUCCESS;
+                            })
+                    )
+            )
+                ;
 
 
         return command.build();
     }
+
 
 
     private LiteralArgumentBuilder<CommandSourceStack> getModifyArgument(CrystalWeapons plugin, Config.Data config) {
@@ -96,10 +138,10 @@ public class WeaponCommand {
             sender.sendMessage(Component.text("Gave ").append(getWeaponToComponent(item)).append(Component.text(" to " + entities.size() + " entities")));
         }
         if (entities.size() == 1) {
-            sender.sendMessage("Gave " + weapon + " to " + entities.getFirst().getName());
+            sender.sendMessage(Component.text("Gave ").append(getWeaponToComponent(item)).append(Component.text(" to " + entities.getFirst().getName())));
         }
         if (entities.isEmpty()) {
-            sender.sendMessage("&cNo entity was found.");
+            sender.sendMessage("No entity was found.");
         }
     }
 
@@ -173,6 +215,7 @@ public class WeaponCommand {
                             NBT.modify(item, nbt -> {
                                 var compound = nbt.getCompound(plugin.COMPOUND);
                                 if (compound != null) {
+                                    boolean success = true;
                                     if (tClass == int.class || tClass == Integer.class) {
                                         compound.setInteger(this.path, ((Number) object).intValue());
                                     } else if (tClass == double.class || tClass == Double.class) {
@@ -184,7 +227,18 @@ public class WeaponCommand {
                                     } else if (tClass == String.class) {
                                         compound.setString(this.path, (String) object);
                                     } else {
-                                        return;
+                                        success = false;
+                                    }
+
+                                    if (success) {
+                                        sender.sendMessage(Component.text("Property ")
+                                                .append(Component.text(this.name()).hoverEvent(HoverEvent.showText(Component.text(this.path))))
+                                                .append(Component.text(" of "))
+                                                .append(WeaponCommand.getWeaponToComponent(item))
+                                                .append(Component.text(" is now set to "))
+                                                .append(Component.text(object.toString()))
+
+                                        );
                                     }
 
 
@@ -193,15 +247,6 @@ public class WeaponCommand {
                                     return;
                                 }
                             });
-
-                            sender.sendMessage(Component.text("Property ")
-                                    .append(Component.text(this.name()).hoverEvent(HoverEvent.showText(Component.text(this.path))))
-                                    .append(Component.text(" of "))
-                                    .append(WeaponCommand.getWeaponToComponent(item))
-                                    .append(Component.text(" is now set to "))
-                                    .append(Component.text(object.toString()))
-
-                            );
 
                         } else {
                             sender.sendMessage(Component.text("A player is required to run this command here").color(NamedTextColor.RED));

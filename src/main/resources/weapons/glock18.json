@@ -9,6 +9,10 @@
     "shoot": "glock18.shoot",
     "reload": "glock18.reload"
   },
+  "visual": {
+    "bullet_tracer_block": "GRAY_STAINED_GLASS",
+    "spawn_bullet_hit_decal": true
+  },
   "max_ammunition": 12,
   "reload_time": 46,
   "shot_delay": 5,
@@ -18,9 +22,5 @@
   "automatic": false,
   "max_distance": 38,
   "bullets_per_shot": 1,
-  "infinite_ammunition": false,
-  "visual": {
-    "bullet_tracer_block": "GRAY_STAINED_GLASS",
-    "spawn_bullet_hit_decal": true
-  }
+  "infinite_ammunition": false
 }

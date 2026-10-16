@@ -4,6 +4,7 @@ import eu.crystalmc.weapons.command.RemoveBulletHitDecalsCommand;
 import eu.crystalmc.weapons.command.WeaponCommand;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.resourcepack.ResourcepackBuilder;
+import eu.crystalmc.weapons.weapon.WeaponLogic;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -13,10 +14,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.UUID;
 
 public final class CrystalWeapons extends JavaPlugin {
 
-    public final String COMPOUND = "crystal_weapon";
+    public final static String COMPOUND = "crystalmc:weapon";
+
+    public final static String RUNTIME = UUID.randomUUID().toString();
 
     @NotNull
     Path configPath = this.getDataPath().resolve("config.yml");
@@ -107,38 +111,45 @@ public final class CrystalWeapons extends JavaPlugin {
 
     private void setupDefaultConfiguration() {
         if (this.isSetup()) {
-            this.saveResource("assets/textures/bullet_hit.png", false);
-            this.saveResource("assets/textures/weapon_fire/default.png", false);
-            this.saveResource("assets/textures/weapon_fire/taser.png", false);
-
-            this.saveResource("weapons/ak47.png", false);
-            this.saveResource("weapons/mag7.png", false);
-            this.saveResource("weapons/glock18.png", false);
-
-            this.saveResource("weapons/ak47.json", false);
-            this.saveResource("weapons/mag7.json", false);
-            this.saveResource("weapons/glock18.json", false);
-
-            this.saveResource("assets/sounds/ak47.reload.ogg", false);
-            this.saveResource("assets/sounds/ak47.shoot.ogg", false);
-
-            this.saveResource("assets/sounds/mag7.reload.ogg", false);
-            this.saveResource("assets/sounds/mag7.shoot.ogg", false);
-
-            this.saveResource("assets/sounds/glock18.reload.ogg", false);
-            this.saveResource("assets/sounds/glock18.shoot.ogg", false);
-
             this.saveResource("assets/models/weapon/default.json", false);
-            this.saveResource("assets/models/weapon_fire/default.json", false);
-            this.saveResource("assets/models/weapon_fire/taser.json", false);
+
+            setupDefaultFireAnimations("default");
+            setupDefaultFireAnimations("taser");
+            setupDefaultFireAnimations("laser");
+
+            setupDefaultWeapon("ak47");
+            setupDefaultWeapon("taser", false);
+            setupDefaultWeapon("mag7");
+            setupDefaultWeapon("glock18");
+
 
             this.saveResource("tutorial.txt", false);
+            this.saveResource("assets/textures/bullet_hit.png", false);
         }
+
 
         String bulletHitModel = "assets/models/bullet_hit.json";
         if (!this.getDataPath().resolve(bulletHitModel).toFile().exists()) {
             this.saveResource(bulletHitModel, false);
         }
+    }
+
+    private void setupDefaultWeapon(String weapon) {
+        setupDefaultWeapon(weapon, true);
+    }
+    private void setupDefaultWeapon(String weapon, boolean reloadSound) {
+        this.saveResource("weapons/" + weapon + ".png", false);
+        this.saveResource("weapons/" + weapon + ".json", false);
+
+        if (reloadSound) {
+            this.saveResource("assets/sounds/" + weapon + ".reload.ogg", false);
+        }
+        this.saveResource("assets/sounds/" + weapon + ".shoot.ogg", false);
+    }
+
+    private void setupDefaultFireAnimations(String fireAnimation) {
+        this.saveResource("assets/textures/weapon_fire/" + fireAnimation + ".png", false);
+        this.saveResource("assets/models/weapon_fire/" + fireAnimation + ".json", false);
     }
 
 }

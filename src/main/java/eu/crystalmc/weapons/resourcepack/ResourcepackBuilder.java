@@ -6,10 +6,11 @@ import com.google.gson.JsonObject;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import eu.crystalmc.weapons.CrystalWeapons;
-import eu.crystalmc.weapons.WeaponsRegistry;
+import eu.crystalmc.weapons.weapon.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.config.JsonConfig;
 import eu.crystalmc.weapons.config.WeaponConfig;
+import eu.crystalmc.weapons.config.resourcepack.FireAnimationTexture;
 import eu.crystalmc.weapons.config.resourcepack.Item;
 import eu.crystalmc.weapons.config.resourcepack.Model;
 import eu.crystalmc.weapons.utils.FTPUtils;
@@ -77,7 +78,7 @@ public class ResourcepackBuilder {
             Files.createDirectories(crystalFolder.resolve("textures"));
 
         } catch (IOException e) {
-            plugin.sendError("Error preparing resourcepack folders");
+            plugin.sendError("Cannot create directories");
             return;
         }
 
@@ -93,13 +94,21 @@ public class ResourcepackBuilder {
         copySubAssets("models", null);
 
         createBulletHitItem();
+        createFireAnimationTextures();
 
 
-        File resourcepackOutput = outputFolder.toPath().getParent().resolve("resourcepack_output" + ".zip").toFile();
+        File resourcepackOutput = outputFolder.toPath().getParent().resolve("resourcepack" + ".zip").toFile();
 
         pack(outputFolder, resourcepackOutput);
 
         host(resourcepackOutput);
+
+        try {
+            FileUtils.cleanDirectory(outputFolder);
+            Files.delete(outputFolder.toPath());
+        } catch (IOException e) {
+            plugin.sendError("Cannot delete output folder");
+        }
     }
 
 
@@ -112,7 +121,7 @@ public class ResourcepackBuilder {
         File[] files = weaponsFolder.listFiles((_, name) -> name.endsWith(".json"));
 
         if (files == null) {
-            plugin.sendWarning("No weapons found.");
+            plugin.sendWarning("No weapons found");
             return;
         }
 
@@ -131,7 +140,7 @@ public class ResourcepackBuilder {
                     if (generated) {
                         weaponCount++;
                     } else {
-                        plugin.sendWarning("Failed to register weapon '" + name + "'.");
+                        plugin.sendWarning("Failed to register weapon '" + name + "'");
                     }
                 }
             }
@@ -147,7 +156,7 @@ public class ResourcepackBuilder {
         try {
             Files.copy(texture.toPath(), getCrystalmcFolder().resolve("textures").resolve("item").resolve("weapon").resolve(texture.getName()), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            plugin.sendError("Failed to create a weapon texture.");
+            plugin.sendError("Failed to create a weapon texture");
             return false;
         }
 
@@ -171,25 +180,26 @@ public class ResourcepackBuilder {
     private ItemStack createWeaponItemStack(String name, WeaponConfig weapon) {
 
         // check if item is a real material
-        boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(weapon.getItem()));
+        String material = plugin.getConfiguration().weapons.visual.item;
+        boolean isMaterial = EnumUtils.isValidEnum(Material.class, getFormattedMaterial(material));
         if (!isMaterial) {
-            plugin.sendError("Weapon '" + name + "' has invalid material.");
+            plugin.sendError("Weapon '" + name + "' has invalid material");
             return null;
         }
 
 
         // create item
-        Material material = Material.valueOf(weapon.getItem());
-        ItemStack item = new ItemStack(material);
+        ItemStack item = new ItemStack(Material.valueOf(material));
 
 
         ReadWriteNBT compound = NBTUtils.nbtFromObject(weapon);
         compound.setString("dedicated_model", "crystalmc:weapon/" + name);
         compound.setInteger("ammunition", weapon.getMaxAmmunition());
+        compound.setString("runtime", CrystalWeapons.RUNTIME);
         compound.setString("id", name);
 
         NBT.modify(item, nbt -> {
-                nbt.getOrCreateCompound(plugin.COMPOUND).mergeCompound(compound);
+                nbt.getOrCreateCompound(CrystalWeapons.COMPOUND).mergeCompound(compound);
             });
 
         ItemMeta meta = item.getItemMeta();
@@ -288,6 +298,28 @@ public class ResourcepackBuilder {
 
 
 
+    private void createFireAnimationTextures() {
+        Path folder = plugin.getDataPath().resolve("assets").resolve("textures").resolve("weapon_fire");
+
+        Path outputFolder = getCrystalmcFolder().resolve("textures").resolve("item").resolve("weapon_fire");
+
+        File[] files = folder.toFile().listFiles((_, name) -> name.endsWith(".png"));
+
+        if (files == null) {
+            plugin.sendWarning("No fire animations found");
+            return;
+        }
+
+        File textureFile;
+        for (File file : files) {
+            textureFile = outputFolder.resolve(file.getName() + ".mcmeta").toFile();
+
+            JsonConfig<FireAnimationTexture> texture = new JsonConfig<>(textureFile, FireAnimationTexture.class);
+            texture.save();
+        }
+
+    }
+
 
 
 
@@ -299,7 +331,7 @@ public class ResourcepackBuilder {
         File[] files = folder.toFile().listFiles((_, name) -> name.endsWith(".ogg"));
 
         if (files == null) {
-            plugin.sendWarning("No sounds found.");
+            plugin.sendWarning("No sounds found");
             return;
         }
 
@@ -399,9 +431,9 @@ public class ResourcepackBuilder {
                 }
             }
         } catch (IOException e) {
-            plugin.sendError("Error while trying to host/upload resourcepack.");
+            plugin.sendError("Error while trying to host/upload resourcepack");
         } catch (URISyntaxException | NoSuchAlgorithmException e) {
-            plugin.sendError("Error while trying add resourcepack.");
+            plugin.sendError("Error while trying add resourcepack");
         }
     }
 
@@ -434,7 +466,7 @@ public class ResourcepackBuilder {
         try {
             ZIPUtils.zipFolder(folder, output);
         } catch (IOException e) {
-            plugin.sendError("Error while packing resourcepack.");
+            plugin.sendError("Error while packing resourcepack");
             return;
         }
 
@@ -443,7 +475,7 @@ public class ResourcepackBuilder {
                 Files.copy(output.toPath(), Path.of(path), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            plugin.sendError("Error while coping resourcepack outputs.");
+            plugin.sendError("Error while coping resourcepack outputs");
         }
     }
 
