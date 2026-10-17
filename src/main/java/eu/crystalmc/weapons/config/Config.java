@@ -61,8 +61,9 @@ public class Config {
         public static class Weapons {
             public Visual visual = new Visual();
             public Gameplay gameplay = new Gameplay();
-
             public Sound sound = new Sound();
+
+            public ConfigurationData data = new ConfigurationData();
 
 
 
@@ -108,6 +109,11 @@ public class Config {
                 public Float maxPitch = 1.17F;
                 public Float minPitch = 0.93F;
                 public Float volume = 1.00F;
+            }
+
+            @Configuration
+            public static class ConfigurationData {
+                public boolean synchronizeWeaponWithConfiguration = true;
             }
 
 

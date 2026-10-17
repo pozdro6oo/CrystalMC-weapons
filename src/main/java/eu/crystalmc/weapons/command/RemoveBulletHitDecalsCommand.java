@@ -3,7 +3,7 @@ package eu.crystalmc.weapons.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import eu.crystalmc.weapons.BulletHitDecals;
+import eu.crystalmc.weapons.CrystalWeapons;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -17,7 +17,7 @@ public class RemoveBulletHitDecalsCommand {
             .requires(source -> source.getSender().hasPermission(permission))
                 .executes(context -> {
                     CommandSender sender = context.getSource().getSender();
-                    BulletHitDecals.removeAll();
+                    CrystalWeapons.removeAllBulletHitDecals();
                     sender.sendMessage(Component.text("Removed all loaded bullet hit decals").color(NamedTextColor.WHITE));
                     return Command.SINGLE_SUCCESS;
                 });

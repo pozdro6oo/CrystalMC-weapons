@@ -1,13 +1,16 @@
 {
   "item": {
     "display_name": "AK-47",
-    "item": "PAPER",
     "model": "default",
     "gun_fire_animation_model": "default"
   },
   "sounds": {
     "shoot": "ak47.shoot",
     "reload": "ak47.reload"
+  },
+  "visual": {
+    "bullet_tracer_block": "GRAY_STAINED_GLASS",
+    "spawn_bullet_hit_decal": true
   },
   "max_ammunition": 30,
   "reload_time": 48,
@@ -18,9 +21,5 @@
   "automatic": true,
   "max_distance": 58,
   "bullets_per_shot": 1,
-  "infinite_ammunition": false,
-  "visual": {
-    "bullet_tracer_block": "GRAY_STAINED_GLASS",
-    "spawn_bullet_hit_decal": true
-  }
+  "infinite_ammunition": false
 }

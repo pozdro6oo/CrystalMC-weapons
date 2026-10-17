@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import eu.crystalmc.weapons.CrystalWeapons;
-import eu.crystalmc.weapons.weapon.WeaponsRegistry;
+import eu.crystalmc.weapons.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.config.JsonConfig;
 import eu.crystalmc.weapons.config.WeaponConfig;
@@ -47,6 +47,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class ResourcepackBuilder {
     CrystalWeapons plugin;
@@ -193,8 +194,8 @@ public class ResourcepackBuilder {
 
 
         ReadWriteNBT compound = NBTUtils.nbtFromObject(weapon);
-        compound.setString("dedicated_model", "crystalmc:weapon/" + name);
         compound.setInteger("ammunition", weapon.getMaxAmmunition());
+        compound.setBoolean("synchronize_weapon_data", true);
         compound.setString("runtime", CrystalWeapons.RUNTIME);
         compound.setString("id", name);
 
@@ -491,7 +492,7 @@ public class ResourcepackBuilder {
     private void copyEverything(Path source, Path target) throws IOException {
         Files.createDirectories(target);
 
-        try (var files = Files.list(source)) {
+        try (Stream<Path> files = Files.list(source)) {
             for (Path file : files.toList()) {
                 Path output = target.resolve(file.getFileName());
 

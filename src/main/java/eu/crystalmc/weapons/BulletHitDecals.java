@@ -15,14 +15,13 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-public final class BulletHitDecals {
+
+class BulletHitDecals {
 
     private static final Deque<ItemDisplay> decals = new ArrayDeque<>();
 
     final public static ItemStack texture = createBulletHitTexture();
 
-    private BulletHitDecals() {
-    }
 
     public static void start(ItemDisplay displayHit, Block hitBlock, JavaPlugin plugin, Config.Data data) {
         int limit = data.weapons.visual.bulletHitDecal.limit;

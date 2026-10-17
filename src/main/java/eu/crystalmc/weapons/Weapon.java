@@ -1,4 +1,4 @@
-package eu.crystalmc.weapons.weapon;
+package eu.crystalmc.weapons;
 
 import com.google.gson.annotations.SerializedName;
 import eu.crystalmc.weapons.config.WeaponConfig;
@@ -11,12 +11,11 @@ public class Weapon extends WeaponConfig {
     @SerializedName("id")
     private String id;
 
+    @SerializedName("synchronize_weapon_data")
+    private boolean synchronize_weapon_data;
+
     @SerializedName("runtime")
     private String runtime;
-
-    @SerializedName("dedicated_model")
-    private String dedicatedModel;
-
 
 
     public int getAmmunition() {
@@ -27,15 +26,18 @@ public class Weapon extends WeaponConfig {
         this.ammunition = ammunition;
     }
 
-    public String getDedicatedModel() {
-        return dedicatedModel;
-    }
-
     public String getId() {
         return id;
     }
 
+
+    public boolean isSynchronizeWeaponData() {return synchronize_weapon_data; }
+
     public String getRuntime() {return runtime; }
 
     public void setRuntime(String runtime) { this.runtime = runtime; }
+
+    public boolean isSynchronizedWithConfiguration() {
+        return runtime.equals(CrystalWeapons.RUNTIME);
+    }
 }

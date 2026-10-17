@@ -1,7 +1,6 @@
 {
   "item": {
     "display_name": "Glock-18",
-    "item": "PAPER",
     "model": "default",
     "gun_fire_animation_model": "default"
   },

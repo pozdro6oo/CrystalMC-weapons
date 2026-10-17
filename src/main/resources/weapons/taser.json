@@ -1,7 +1,6 @@
 {
   "item": {
     "display_name": "Taser",
-    "item": "PAPER",
     "model": "default",
     "gun_fire_animation_model": "taser"
   },

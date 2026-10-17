@@ -7,12 +7,14 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import de.tr7zw.nbtapi.NBT;
+import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import eu.crystalmc.weapons.CrystalWeapons;
-import eu.crystalmc.weapons.weapon.WeaponsRegistry;
+import eu.crystalmc.weapons.WeaponsRegistry;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.config.JsonConfig;
 import eu.crystalmc.weapons.config.WeaponConfig;
 import eu.crystalmc.weapons.utils.NBTUtils;
+import eu.crystalmc.weapons.utils.WeaponUtils;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -48,7 +50,7 @@ public class WeaponCommand {
                                     String weapon = context.getArgument("weapon", String.class);
                                     List<Entity> entities = context.getArgument("entities", EntitySelectorArgumentResolver.class).resolve(context.getSource());
 
-                                    if (!WeaponsRegistry.getWeapons().containsKey(weapon)) {
+                                    if (!WeaponsRegistry.getItems().containsKey(weapon)) {
                                         sender.sendMessage(Component.text("Unknown weapon '" + weapon + "'").color(NamedTextColor.RED));
                                         return Command.SINGLE_SUCCESS;
                                     }
@@ -77,7 +79,7 @@ public class WeaponCommand {
                                         return Command.SINGLE_SUCCESS;
                                     }
                                     NBT.modify(item, nbt -> {
-                                        var compound = nbt.getCompound(plugin.COMPOUND);
+                                        ReadWriteNBT compound = WeaponUtils.getNBT(nbt);
                                         if (compound != null) {
                                             WeaponConfig weaponConfig = NBTUtils.nbtToObject(compound, WeaponConfig.class);
                                             JsonConfig<WeaponConfig>  json = new JsonConfig(file, WeaponConfig.class, weaponConfig);
@@ -146,7 +148,7 @@ public class WeaponCommand {
     }
 
     private CompletableFuture<Suggestions> suggestWeapons(SuggestionsBuilder builder) {
-        WeaponsRegistry.getWeapons().keySet().forEach(builder::suggest);
+        WeaponsRegistry.getItems().keySet().forEach(builder::suggest);
         return builder.buildFuture();
     }
 
@@ -166,6 +168,7 @@ public class WeaponCommand {
     private enum Property {
         infinite_ammunition(BoolArgumentType.bool(), Boolean.class),
         automatic(BoolArgumentType.bool(), Boolean.class),
+        synchronize_weapon_data(BoolArgumentType.bool(), Boolean.class),
         max_ammunition(IntegerArgumentType.integer(1), int.class),
         max_distance(IntegerArgumentType.integer(1), int.class),
         shot_delay(IntegerArgumentType.integer(1),int.class),
@@ -174,6 +177,7 @@ public class WeaponCommand {
         inaccuracy(DoubleArgumentType.doubleArg(0), double.class),
         reload_time(IntegerArgumentType.integer(0),int.class),
         bullets_per_shot(IntegerArgumentType.integer(1), int.class);
+
 
 
         private final String path;
@@ -213,7 +217,7 @@ public class WeaponCommand {
                                 return Command.SINGLE_SUCCESS;
                             }
                             NBT.modify(item, nbt -> {
-                                var compound = nbt.getCompound(plugin.COMPOUND);
+                                ReadWriteNBT compound = WeaponUtils.getNBT(nbt);
                                 if (compound != null) {
                                     boolean success = true;
                                     if (tClass == int.class || tClass == Integer.class) {

@@ -4,16 +4,17 @@ import eu.crystalmc.weapons.command.RemoveBulletHitDecalsCommand;
 import eu.crystalmc.weapons.command.WeaponCommand;
 import eu.crystalmc.weapons.config.Config;
 import eu.crystalmc.weapons.resourcepack.ResourcepackBuilder;
-import eu.crystalmc.weapons.weapon.WeaponLogic;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.UUID;
 
 public final class CrystalWeapons extends JavaPlugin {
@@ -40,6 +41,9 @@ public final class CrystalWeapons extends JavaPlugin {
         //  register event listener
         //  this one does not need any priority
         Bukkit.getPluginManager().registerEvents(new WeaponLogic(this), this);
+        if (getConfiguration().weapons.data.synchronizeWeaponWithConfiguration) {
+            Bukkit.getPluginManager().registerEvents(new SynchronizeWeaponWithConfiguration(this), this);
+        }
 
         // register command
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -61,13 +65,40 @@ public final class CrystalWeapons extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        BulletHitDecals.removeAll();
+        removeAllBulletHitDecals();
         Bukkit.getScheduler().cancelTasks(this);
     }
 
     public boolean hasPermission(CommandSender player, String permission) {
         return (player.hasPermission(permission) || permission.equals("default"));
     }
+
+
+
+
+
+
+    public static void removeAllBulletHitDecals() {
+        BulletHitDecals.removeAll();
+    }
+
+    public static ItemStack getWeapon(String weaponId) {
+        return WeaponsRegistry.getWeapon(weaponId);
+    }
+
+    public static Set<String> getWeapons() {
+        return WeaponsRegistry.getItems().keySet();
+    }
+
+
+
+
+
+
+
+
+
+
 
     public void sendWarning(String message) {
         log(message, NamedTextColor.YELLOW);
@@ -93,6 +124,12 @@ public final class CrystalWeapons extends JavaPlugin {
                 .append(Component.text("] ").color(NamedTextColor.DARK_GRAY));
     }
 
+
+
+
+
+
+
     public @NotNull Config.Data getConfiguration() {
         return config.data;
     }
@@ -104,6 +141,13 @@ public final class CrystalWeapons extends JavaPlugin {
     public void saveConfiguration() {
         config.save(configPath);
     }
+
+
+
+
+
+
+
 
     private Boolean isSetup() {
         return !configPath.toFile().exists();

@@ -1,13 +1,16 @@
 {
   "item": {
     "display_name": "Mag-7",
-    "item": "PAPER",
     "model": "default",
     "gun_fire_animation_model": "default"
   },
   "sounds": {
     "shoot": "mag7.shoot",
     "reload": "mag7.reload"
+  },
+  "visual": {
+    "bullet_tracer_block": "GRAY_STAINED_GLASS",
+    "spawn_bullet_hit_decal": true
   },
   "max_ammunition": 5,
   "reload_time": 48,
@@ -18,9 +21,5 @@
   "automatic": false,
   "max_distance": 26,
   "bullets_per_shot": 9,
-  "infinite_ammunition": false,
-  "visual": {
-    "bullet_tracer_block": "GRAY_STAINED_GLASS",
-    "spawn_bullet_hit_decal": true
-  }
+  "infinite_ammunition": false
 }

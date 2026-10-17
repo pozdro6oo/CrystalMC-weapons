@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.Set;
 import java.util.zip.CRC32;
@@ -117,8 +119,8 @@ public final class ZIPUtils {
 
     private static boolean isFileLocked(File file) {
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
-             var channel = raf.getChannel()) {
-            var lock = channel.tryLock();
+            FileChannel channel = raf.getChannel()) {
+            FileLock lock = channel.tryLock();
             if (lock != null) {
                 lock.release();
                 return false;
